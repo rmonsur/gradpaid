@@ -30,6 +30,9 @@ export async function POST(req: Request): Promise<Response> {
   return handle(async () => {
     const input = createSchema.parse(await req.json());
     const { displayName, email, intakeToken, ...campaignFields } = input;
+    if (campaignFields.goalCents > campaignFields.balanceCents) {
+      return fail('Goal cannot exceed the loan balance', 400);
+    }
     if (!verifyLoanFacts(campaignFields, intakeToken)) {
       return fail('Loan facts do not match what the intake agent read from the statement', 401);
     }

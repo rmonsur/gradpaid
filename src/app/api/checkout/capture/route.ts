@@ -4,6 +4,7 @@ import { createPayPalToolkit } from '@/lib/paypal/toolkit';
 import { getOrderByPayPalId, markCaptured } from '@/features/giving/service';
 import { parsePayPalAmount } from '@/lib/money';
 import { logger } from '@/lib/logger';
+import { parseToolResult } from '@/lib/paypal/results';
 
 const bodySchema = z.object({ orderId: z.string().min(5) });
 
@@ -43,10 +44,9 @@ export async function POST(req: Request): Promise<Response> {
     if (!payOrder.execute) {
       return fail('pay_order tool unavailable', 500);
     }
-    const raw = (await payOrder.execute(
-      { id: orderId },
-      { toolCallId: orderId, messages: [] },
-    )) as CaptureResponse;
+    const raw = parseToolResult(
+      await payOrder.execute({ id: orderId }, { toolCallId: orderId, messages: [] }),
+    ) as CaptureResponse;
     const capture = raw.purchase_units?.[0]?.payments?.captures?.[0];
     if (!capture || capture.status !== 'COMPLETED') {
       return fail(

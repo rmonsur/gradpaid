@@ -10,6 +10,11 @@ interface TokenResponse {
 
 let cached: { token: string; expiresAt: number } | undefined;
 
+/** PayPal rejects localhost and bare IPs as token domains, so those are left unscoped. */
+function isPublicHost(host: string): boolean {
+  return host.includes('.') && host !== '127.0.0.1' && !host.endsWith('.localhost');
+}
+
 /**
  * Browser-safe client token for the PayPal JS SDK v6. Scoped to this app's domain,
  * cached until shortly before expiry.
@@ -25,8 +30,11 @@ export async function getBrowserClientToken(): Promise<string> {
   const body = new URLSearchParams({
     grant_type: 'client_credentials',
     response_type: 'client_token',
-    'domains[]': new URL(env.NEXT_PUBLIC_APP_URL).host,
   });
+  const host = new URL(env.NEXT_PUBLIC_APP_URL).hostname;
+  if (isPublicHost(host)) {
+    body.set('domains[]', host);
+  }
   const res = await fetch(SANDBOX_OAUTH_URL, {
     method: 'POST',
     headers: {

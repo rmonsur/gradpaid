@@ -8,6 +8,7 @@ import { splitDonation } from '@/features/campaigns/split';
 import { getCampaignsByIds, toSummary } from '@/features/campaigns/service';
 import { recordOrder } from '@/features/giving/service';
 import { fromCents, parsePayPalAmount, DEFAULT_CURRENCY } from '@/lib/money';
+import { parseToolResult } from '@/lib/paypal/results';
 import { MAX_AGENT_STEPS, MAX_SPLIT_CAMPAIGNS } from '@/lib/constants';
 
 const SYSTEM_PROMPT = `You are the GradPaid giving agent. You help a donor direct one PayPal payment to the student loan balances of verified graduates. Money goes to the loan servicer, never to the borrower.
@@ -18,6 +19,8 @@ Follow this sequence and keep replies short and warm:
 3. Call propose_split with the amount and chosen campaign ids. Show the split in dollars and ask the donor to confirm.
 4. Only after the donor confirms, call create_order with one item per campaign, then record_donation_order with the PayPal order id and the exact same split.
 5. Tell the donor the PayPal button is ready. Do not invent order ids, amounts, or campaigns.
+
+Write in plain sentences without markdown, asterisks, or headings. Dollar amounts like $50.00 are fine.
 
 All amounts you pass to tools are integer cents except create_order, which takes dollars with two decimals.`;
 
@@ -44,10 +47,9 @@ async function verifyPayPalOrder(
   if (!getOrder?.execute) {
     return 'get_order unavailable';
   }
-  const raw = (await getOrder.execute(
-    { id: paypalOrderId },
-    { toolCallId: paypalOrderId, messages: [] },
-  )) as OrderLookup;
+  const raw = parseToolResult(
+    await getOrder.execute({ id: paypalOrderId }, { toolCallId: paypalOrderId, messages: [] }),
+  ) as OrderLookup;
   const amount = raw.purchase_units?.[0]?.amount;
   if (!amount || amount.currency_code !== DEFAULT_CURRENCY) {
     return 'order not found or wrong currency';

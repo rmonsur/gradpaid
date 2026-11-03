@@ -33,9 +33,10 @@ export function Card({
   children: ReactNode;
   className?: string;
 }): React.ReactElement {
+  const background = /\bbg-/.test(className) ? '' : 'bg-surface';
   return (
     <div
-      className={`rounded-xl border border-border bg-surface p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
+      className={`rounded-xl border border-border ${background} p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${className}`}
     >
       {children}
     </div>
