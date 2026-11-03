@@ -14,6 +14,8 @@ interface Window {
 }
 
 const UNKNOWN_CLIENT = 'unknown';
+/** Prune expired windows once the map grows past this many keys. */
+const PRUNE_THRESHOLD = 10_000;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -25,6 +27,13 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   return {
     hit: (key: string): boolean => {
       const now = Date.now();
+      if (windows.size > PRUNE_THRESHOLD) {
+        for (const [k, w] of windows) {
+          if (now - w.startedAt >= options.windowMs) {
+            windows.delete(k);
+          }
+        }
+      }
       const current = windows.get(key);
       const fresh = !current || now - current.startedAt >= options.windowMs;
       const next: Window = fresh
@@ -36,10 +45,17 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   };
 }
 
-/** Best-effort client identity behind Render's proxy. */
+/**
+ * Client identity behind Render's proxy. Render sets True-Client-IP; failing that the proxy
+ * appends the real client to the end of X-Forwarded-For, so the right-most entry is trusted.
+ */
 export function clientKey(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  return forwarded?.split(',')[0]?.trim() || UNKNOWN_CLIENT;
+  const trueClient = req.headers.get('true-client-ip')?.trim();
+  if (trueClient) {
+    return trueClient;
+  }
+  const forwarded = req.headers.get('x-forwarded-for')?.split(',') ?? [];
+  return forwarded[forwarded.length - 1]?.trim() || UNKNOWN_CLIENT;
 }
 
 /** Returns a 429 envelope when the client is over the limit, otherwise null. */

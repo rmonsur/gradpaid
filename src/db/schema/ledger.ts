@@ -1,4 +1,5 @@
-import { pgTable, text, integer, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, jsonb, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { campaigns } from './campaigns';
 
 export const disbursementStatusEnum = pgEnum('disbursement_status', [
@@ -55,16 +56,25 @@ export interface ToolCallRecord {
   readonly ok: boolean;
 }
 
-export const agentRuns = pgTable('agent_runs', {
-  id: text('id').primaryKey(),
-  agent: text('agent').notNull(),
-  trigger: text('trigger').notNull(),
-  status: agentRunStatusEnum('status').notNull().default('running'),
-  summary: text('summary'),
-  toolCalls: jsonb('tool_calls').$type<readonly ToolCallRecord[]>().notNull().default([]),
-  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
-  finishedAt: timestamp('finished_at', { withTimezone: true }),
-});
+export const agentRuns = pgTable(
+  'agent_runs',
+  {
+    id: text('id').primaryKey(),
+    agent: text('agent').notNull(),
+    trigger: text('trigger').notNull(),
+    status: agentRunStatusEnum('status').notNull().default('running'),
+    summary: text('summary'),
+    toolCalls: jsonb('tool_calls').$type<readonly ToolCallRecord[]>().notNull().default([]),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [
+    /** The database, not application code, guarantees one live run per agent. */
+    uniqueIndex('agent_runs_one_running')
+      .on(t.agent)
+      .where(sql`${t.status} = 'running'`),
+  ],
+);
 
 export const reconciliationExceptions = pgTable('reconciliation_exceptions', {
   id: text('id').primaryKey(),

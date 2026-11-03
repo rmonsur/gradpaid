@@ -19,7 +19,7 @@ export interface PayableDisbursement {
 /** Prefix of the synthetic ids a dry run hands out instead of creating rows. */
 export const DRY_RUN_PREFIX = 'dry_';
 
-const PAYABLE_STATUSES: readonly Disbursement['status'][] = ['planned', 'failed'];
+const PAYABLE_STATUSES: Disbursement['status'][] = ['planned', 'failed'];
 
 function sumCents(rows: readonly Pledge[]): number {
   return rows.reduce((total, p) => total + p.cents, 0);
@@ -80,16 +80,30 @@ export async function openDisbursementForCampaign(
   }
   const id = newId('dsb');
   await db.insert(disbursements).values({ id, campaignId, amountCents, agentRunId });
-  await db
+  const attached = await db
     .update(pledges)
     .set({ disbursementId: id })
     .where(
-      inArray(
-        pledges.id,
-        free.map((p) => p.id),
+      and(
+        inArray(
+          pledges.id,
+          free.map((p) => p.id),
+        ),
+        isNull(pledges.disbursementId),
       ),
-    );
-  return { id, campaignId, amountCents, pledgeIds: free.map((p) => p.id) };
+    )
+    .returning();
+  const heldCents = sumCents(attached);
+  if (heldCents !== amountCents) {
+    await db
+      .update(disbursements)
+      .set({ amountCents: heldCents, status: heldCents > 0 ? 'planned' : 'failed' })
+      .where(eq(disbursements.id, id));
+  }
+  if (heldCents < MIN_DISBURSEMENT_CENTS) {
+    return { error: 'pledges were claimed by another disbursement' };
+  }
+  return { id, campaignId, amountCents: heldCents, pledgeIds: attached.map((p) => p.id) };
 }
 
 export interface PayoutOrder {
@@ -171,9 +185,14 @@ export async function recordPayoutSent(
       paypalPayoutBatchId: result.batchId,
       paypalPayoutItemId: result.itemId ?? null,
     })
-    .where(eq(disbursements.id, disbursementId))
+    .where(
+      and(eq(disbursements.id, disbursementId), inArray(disbursements.status, PAYABLE_STATUSES)),
+    )
     .returning();
   const d = rows[0];
+  if (!d) {
+    return;
+  }
   const campaign = await getCampaign(d.campaignId);
   await addDisbursed(d.campaignId, order.amountCents);
   await appendLedger({

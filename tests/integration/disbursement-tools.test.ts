@@ -186,3 +186,23 @@ describe('dry-run payout resolution', () => {
     expect(await listDisbursements()).toEqual([]);
   });
 });
+
+describe('concurrent open_disbursement for one campaign', () => {
+  it('holds each pledge in exactly one disbursement', async () => {
+    const seeded = await resetDemo('sponsor@example.com', { seedDonation: true });
+    const runId = (await startRun('disbursement', 'test')).id;
+    const tools = createDisbursementLocalTools(runId, false, deps());
+    const results = await Promise.all(
+      Array.from({ length: 3 }, () =>
+        invoke<Record<string, unknown>>(tools.open_disbursement, {
+          campaignId: seeded.campaignIds[0],
+        }),
+      ),
+    );
+    const opened = results.filter((r) => typeof r.disbursementId === 'string');
+    const held = (await listDisbursements()).filter((d) => d.status === 'planned');
+    expect(opened).toHaveLength(1);
+    expect(held).toHaveLength(1);
+    expect(held[0]?.amountCents).toBe(NURSING_PLEDGE_CENTS);
+  });
+});

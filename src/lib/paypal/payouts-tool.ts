@@ -38,48 +38,65 @@ const sendPayoutInput = z.object({
     .describe('Disbursement id returned by open_disbursement. The amount comes from the server.'),
 });
 
+/** Runs async jobs strictly one after another, in call order. */
+function createSerialQueue(): <T>(job: () => Promise<T>) => Promise<T> {
+  let tail: Promise<unknown> = Promise.resolve();
+  return <T>(job: () => Promise<T>): Promise<T> => {
+    const next = tail.then(job, job);
+    tail = next.catch(() => undefined);
+    return next;
+  };
+}
+
 /**
  * Custom tools in the same shape as the official PayPal Agent Toolkit tools, covering the
  * Payouts API which the toolkit does not yet ship. The receiver is fixed, the amount is read
- * from the disbursement row, and the per-run cap is checked against what was actually sent.
+ * from the disbursement row, and sends run one at a time so the per-run cap check and the
+ * send cannot interleave.
  */
 export function createPayoutTools(
   toolkit: PayPalAgentToolkit,
   deps: PayoutDeps,
   send: SendPayoutFn = sendPayout,
 ): Readonly<Record<string, Tool>> {
+  const oneAtATime = createSerialQueue();
+
+  async function sendGuarded(disbursementId: string): Promise<unknown> {
+    const order = await deps.resolve(disbursementId);
+    if (!order) {
+      return { error: 'unknown or already paid disbursement' };
+    }
+    if ((await deps.spentCents()) + order.amountCents > MAX_PAYOUT_PER_RUN_CENTS) {
+      return { error: 'per-run payout cap exceeded' };
+    }
+    const request: PayoutRequest = {
+      disbursementId: order.id,
+      receiverEmail: deps.receiverEmail,
+      amountCents: order.amountCents,
+      note: order.note,
+    };
+    if (deps.dryRun) {
+      return { simulated: true, dryRun: true, ...request };
+    }
+    let result: PayoutResult;
+    try {
+      result = await send(toolkit, request);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : 'unknown error';
+      await deps.onFailed(order.id, detail);
+      return { error: 'payout failed', detail };
+    }
+    await deps.onSent(order.id, result);
+    return { ...result, amountCents: order.amountCents };
+  }
+
   return {
     send_payout: tool({
       description:
         'Send the PayPal payout for an opened disbursement to the loan servicer. Use exactly once per disbursement id. Returns the payout batch id, status and amount.',
       parameters: sendPayoutInput,
-      execute: async ({ disbursementId }): Promise<unknown> => {
-        const order = await deps.resolve(disbursementId);
-        if (!order) {
-          return { error: 'unknown or already paid disbursement' };
-        }
-        if ((await deps.spentCents()) + order.amountCents > MAX_PAYOUT_PER_RUN_CENTS) {
-          return { error: 'per-run payout cap exceeded' };
-        }
-        const request: PayoutRequest = {
-          disbursementId: order.id,
-          receiverEmail: deps.receiverEmail,
-          amountCents: order.amountCents,
-          note: order.note,
-        };
-        if (deps.dryRun) {
-          return { simulated: true, dryRun: true, ...request };
-        }
-        try {
-          const result = await send(toolkit, request);
-          await deps.onSent(order.id, result);
-          return { ...result, amountCents: order.amountCents };
-        } catch (err) {
-          const detail = err instanceof Error ? err.message : 'unknown error';
-          await deps.onFailed(order.id, detail);
-          return { error: 'payout failed', detail };
-        }
-      },
+      execute: ({ disbursementId }): Promise<unknown> =>
+        oneAtATime(() => sendGuarded(disbursementId)),
     }),
     get_payout_batch: tool({
       description: 'Look up the status of a PayPal payout batch by batch id.',
