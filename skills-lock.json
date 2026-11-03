@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "anatomy": {
+      "source": "wheresryan22/anatomy",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "37fe1f16683eddee1b3723a3fe8e4a5b92bb653a6991128a372d3268730cdc90"
+    },
+    "diagram-design": {
+      "source": "cathrynlavery/diagram-design",
+      "sourceType": "github",
+      "skillPath": "skills/diagram-design/SKILL.md",
+      "computedHash": "fd4df2f34ebd780c1f36c75d8c49439f06b5e78aada0c655450c6a000d8b8965"
+    }
+  }
+}
