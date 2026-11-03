@@ -37,12 +37,27 @@ describe('clientKey', () => {
 });
 
 describe('tracked key ceiling', () => {
-  it('keeps serving new keys once the ceiling is hit by evicting the oldest', () => {
-    const limiter = createRateLimiter({ limit: 1, windowMs: WINDOW_MS });
-    for (let i = 0; i < 10_001; i += 1) {
+  it('never drops a live counter; new clients beyond the ceiling share one limited bucket', () => {
+    vi.useFakeTimers();
+    const limiter = createRateLimiter({ limit: 2, windowMs: WINDOW_MS });
+    for (let i = 0; i < 10_000; i += 1) {
       limiter.hit(`k${i}`);
     }
     expect(limiter.hit('k0')).toBe(true);
-    expect(limiter.hit('k10000')).toBe(false);
+    expect(limiter.hit('k0')).toBe(false);
+    expect(limiter.hit('new-a')).toBe(true);
+    expect(limiter.hit('new-b')).toBe(true);
+    expect(limiter.hit('new-c')).toBe(false);
+  });
+
+  it('frees room for new clients once old windows expire', () => {
+    vi.useFakeTimers();
+    const limiter = createRateLimiter({ limit: 1, windowMs: WINDOW_MS });
+    for (let i = 0; i < 10_000; i += 1) {
+      limiter.hit(`k${i}`);
+    }
+    vi.advanceTimersByTime(WINDOW_MS + 1);
+    expect(limiter.hit('late-a')).toBe(true);
+    expect(limiter.hit('late-b')).toBe(true);
   });
 });

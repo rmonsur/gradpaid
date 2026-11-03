@@ -14,8 +14,10 @@ interface Window {
 }
 
 const UNKNOWN_CLIENT = 'unknown';
-/** Hard ceiling on tracked keys; the oldest key is evicted when a new one would exceed it. */
+/** Hard ceiling on tracked keys. */
 const MAX_TRACKED_KEYS = 10_000;
+/** When the map is full of live windows, new clients share this bucket and are limited together. */
+const OVERFLOW_KEY = '__overflow__';
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -24,22 +26,35 @@ const HTTP_TOO_MANY_REQUESTS = 429;
  */
 export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   const windows = new Map<string, Window>();
+
+  /** Drops expired windows; only runs when the map is full, so the scan is bounded and rare. */
+  function pruneExpired(now: number): void {
+    for (const [k, w] of windows) {
+      if (now - w.startedAt >= options.windowMs) {
+        windows.delete(k);
+      }
+    }
+  }
+
+  /** Picks the bucket for a key: its own, or the shared overflow bucket when full of live windows. */
+  function bucketFor(key: string, now: number): string {
+    if (windows.has(key) || windows.size < MAX_TRACKED_KEYS) {
+      return key;
+    }
+    pruneExpired(now);
+    return windows.size < MAX_TRACKED_KEYS ? key : OVERFLOW_KEY;
+  }
+
   return {
     hit: (key: string): boolean => {
       const now = Date.now();
-      const current = windows.get(key);
+      const bucket = bucketFor(key, now);
+      const current = windows.get(bucket);
       const fresh = !current || now - current.startedAt >= options.windowMs;
       const next: Window = fresh
         ? { startedAt: now, count: 1 }
         : { startedAt: current.startedAt, count: current.count + 1 };
-      if (!current && windows.size >= MAX_TRACKED_KEYS) {
-        const oldest = windows.keys().next().value;
-        if (oldest !== undefined) {
-          windows.delete(oldest);
-        }
-      }
-      windows.delete(key);
-      windows.set(key, next);
+      windows.set(bucket, next);
       return next.count <= options.limit;
     },
   };
