@@ -16,9 +16,8 @@ interface Window {
 const UNKNOWN_CLIENT = 'unknown';
 /** Hard ceiling on tracked keys. */
 const MAX_TRACKED_KEYS = 10_000;
-/** When the map is full of live windows, new clients share this bucket with a wider limit. */
+/** When the map is full of live windows, new clients share this bucket at the normal limit (fail closed). */
 const OVERFLOW_KEY = '__overflow__';
-const OVERFLOW_LIMIT_MULTIPLIER = 10;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -34,6 +33,9 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
    */
   function popExpired(now: number): void {
     for (const [k, w] of windows) {
+      if (w.startedAt > now) {
+        continue;
+      }
       if (now - w.startedAt < options.windowMs) {
         return;
       }
@@ -54,8 +56,7 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
     hit: (key: string): boolean => {
       const now = Date.now();
       const bucket = bucketFor(key, now);
-      const limit =
-        bucket === OVERFLOW_KEY ? options.limit * OVERFLOW_LIMIT_MULTIPLIER : options.limit;
+      const limit = options.limit;
       const current = windows.get(bucket);
       const fresh = !current || now - current.startedAt >= options.windowMs;
       if (fresh) {
