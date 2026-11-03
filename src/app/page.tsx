@@ -3,6 +3,7 @@ import { APP_NAME } from '@/lib/constants';
 import { listActiveCampaigns, type CampaignSummary } from '@/features/campaigns/service';
 import { formatUsd } from '@/lib/money';
 import { Badge, Card, LinkButton, ProgressBar, Stat } from '@/components/ui';
+import { SystemStatus } from '@/components/system-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,13 +86,10 @@ function Hero({ campaigns }: { campaigns: readonly CampaignSummary[] }): React.R
   const paid = sumBy(campaigns, (c) => c.disbursedCents);
   const remaining = sumBy(campaigns, (c) => c.remainingCents);
   return (
-    <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
+    <section className="relative overflow-hidden">
       <div className="dot-grid pointer-events-none absolute inset-0" aria-hidden />
-      <div className="relative grid gap-10 p-6 md:grid-cols-[1.3fr_1fr] md:p-12">
+      <div className="relative grid gap-10 py-6 md:grid-cols-[1.3fr_1fr] md:py-12">
         <div className="space-y-6">
-          <Badge tone="accent" live>
-            Agents online. PayPal sandbox.
-          </Badge>
           <h1 className="display text-5xl md:text-7xl">
             The loan
             <br />
@@ -110,16 +108,20 @@ function Hero({ campaigns }: { campaigns: readonly CampaignSummary[] }): React.R
         </div>
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border">
           <div className="bg-surface p-5">
+            <SystemStatus />
+          </div>
+          <div className="bg-surface p-5">
             <Stat label="Raised" value={formatUsd(raised)} accent />
           </div>
           <div className="bg-surface p-5">
             <Stat label="Paid to servicers" value={formatUsd(paid)} />
           </div>
           <div className="bg-surface p-5">
-            <Stat label="Still owed on goals" value={formatUsd(remaining)} />
-          </div>
-          <div className="bg-surface p-5">
-            <Stat label="Verified campaigns" value={String(campaigns.length)} />
+            <Stat
+              label="Still owed on goals"
+              value={formatUsd(remaining)}
+              hint={`${campaigns.length} verified campaigns`}
+            />
           </div>
         </div>
       </div>
@@ -134,7 +136,7 @@ export default async function Home(): Promise<React.ReactElement> {
       <Hero campaigns={campaigns ?? []} />
 
       <section className="space-y-6">
-        <div className="label">How it works</div>
+        <h2 className="display text-3xl">How it works.</h2>
         <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border md:grid-cols-3">
           {STEPS.map((s) => (
             <div key={s.index} className="bg-surface p-6">
@@ -175,10 +177,7 @@ export default async function Home(): Promise<React.ReactElement> {
 
       <section className="space-y-6">
         <div className="flex items-end justify-between">
-          <div className="space-y-2">
-            <div className="label">Verified campaigns</div>
-            <h2 className="display text-3xl">Who {APP_NAME} is paying for.</h2>
-          </div>
+          <h2 className="display text-3xl">Who {APP_NAME} is paying for.</h2>
           <Link href="/give" className="text-sm text-accent hover:underline">
             Ask the giving agent
           </Link>

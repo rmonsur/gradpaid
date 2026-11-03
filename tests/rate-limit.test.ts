@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createRateLimiter } from '@/lib/rate-limit';
+import { createRateLimiter, clientKey } from '@/lib/rate-limit';
 
 const LIMIT = 3;
 const WINDOW_MS = 60_000;
@@ -24,5 +24,25 @@ describe('createRateLimiter', () => {
     expect(limiter.hit('a')).toBe(false);
     vi.advanceTimersByTime(WINDOW_MS + 1);
     expect(limiter.hit('a')).toBe(true);
+  });
+});
+
+describe('clientKey', () => {
+  it('trusts only the right-most forwarded address', () => {
+    const req = new Request('http://localhost/', {
+      headers: { 'x-forwarded-for': 'spoofed, 203.0.113.9' },
+    });
+    expect(clientKey(req)).toBe('203.0.113.9');
+  });
+});
+
+describe('tracked key ceiling', () => {
+  it('keeps serving new keys once the ceiling is hit by evicting the oldest', () => {
+    const limiter = createRateLimiter({ limit: 1, windowMs: WINDOW_MS });
+    for (let i = 0; i < 10_001; i += 1) {
+      limiter.hit(`k${i}`);
+    }
+    expect(limiter.hit('k0')).toBe(true);
+    expect(limiter.hit('k10000')).toBe(false);
   });
 });

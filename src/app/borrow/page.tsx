@@ -7,7 +7,6 @@ export default function BorrowPage(): React.ReactElement {
   return (
     <div>
       <PageHeader
-        eyebrow="Intake agent"
         title="Start a campaign."
         subtitle="Upload a loan statement. The intake agent reads it, drafts your campaign, and you approve before anything is published."
       />

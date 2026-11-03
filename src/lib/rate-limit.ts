@@ -14,8 +14,8 @@ interface Window {
 }
 
 const UNKNOWN_CLIENT = 'unknown';
-/** Prune expired windows once the map grows past this many keys. */
-const PRUNE_THRESHOLD = 10_000;
+/** Hard ceiling on tracked keys; the oldest key is evicted when a new one would exceed it. */
+const MAX_TRACKED_KEYS = 10_000;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -27,18 +27,18 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   return {
     hit: (key: string): boolean => {
       const now = Date.now();
-      if (windows.size > PRUNE_THRESHOLD) {
-        for (const [k, w] of windows) {
-          if (now - w.startedAt >= options.windowMs) {
-            windows.delete(k);
-          }
-        }
-      }
       const current = windows.get(key);
       const fresh = !current || now - current.startedAt >= options.windowMs;
       const next: Window = fresh
         ? { startedAt: now, count: 1 }
         : { startedAt: current.startedAt, count: current.count + 1 };
+      if (!current && windows.size >= MAX_TRACKED_KEYS) {
+        const oldest = windows.keys().next().value;
+        if (oldest !== undefined) {
+          windows.delete(oldest);
+        }
+      }
+      windows.delete(key);
       windows.set(key, next);
       return next.count <= options.limit;
     },
@@ -46,14 +46,10 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
 }
 
 /**
- * Client identity behind Render's proxy. Render sets True-Client-IP; failing that the proxy
- * appends the real client to the end of X-Forwarded-For, so the right-most entry is trusted.
+ * Client identity behind Render's proxy. The proxy appends the connecting address to the end of
+ * X-Forwarded-For, so only the right-most entry is trusted; anything the client sends sits left.
  */
 export function clientKey(req: Request): string {
-  const trueClient = req.headers.get('true-client-ip')?.trim();
-  if (trueClient) {
-    return trueClient;
-  }
   const forwarded = req.headers.get('x-forwarded-for')?.split(',') ?? [];
   return forwarded[forwarded.length - 1]?.trim() || UNKNOWN_CLIENT;
 }

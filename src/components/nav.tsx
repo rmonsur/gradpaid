@@ -28,9 +28,7 @@ export function Nav(): React.ReactElement {
             </Link>
           ))}
           <span className="ml-3 hidden md:inline-flex">
-            <Badge tone="accent" live>
-              Sandbox
-            </Badge>
+            <Badge tone="accent">Sandbox</Badge>
           </span>
         </nav>
       </div>

@@ -65,29 +65,35 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Display type: Inter, uppercase, tight. */
-.display {
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  text-transform: uppercase;
+p {
+  text-wrap: pretty;
 }
 
-/* label-md: 12px mono, 600, uppercase, wide tracking. */
-.label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
+@layer components {
+  /* Display type: Inter, uppercase, tight. */
+  .display {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
 
-/* Faint dot grid behind the hero, as in the source composition. */
-.dot-grid {
-  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
-  background-size: 24px 24px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 85%);
+  /* label-md: 12px mono, 600, uppercase, wide tracking. Utilities may override the colour. */
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Faint dot grid behind the hero, as in the source composition. */
+  .dot-grid {
+    background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 85%);
+  }
 }
 
 @keyframes pulse-dot {

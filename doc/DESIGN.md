@@ -64,14 +64,18 @@ composition, section rhythm, density, and interaction tone before adapting copy 
 headings in the source: TREASURY PLATFORM.; Global Payouts; Live Analytics; Yield Optimization; Risk
 Mitigation.
 
-First viewport pattern: a status line in mono label type (a pulsing lime dot plus "SYSTEM STATUS: OPTIMAL"),
-a short uppercase display headline ending in a period, a two-line mono subhead in muted grey, then a row of
-stat tiles whose values are the only large white numbers on screen. Numbered feature cards ("03/", "04/")
-follow in a dense grid.
+First viewport pattern: a short uppercase display headline ending in a period, a two-line mono subhead in
+muted grey, then a row of stat tiles whose values are the only large white numbers on screen. The source's
+"SYSTEM STATUS: OPTIMAL" line is rendered as the first stat tile, read live from the server, rather than as a
+decorative eyebrow above the headline. Numbered feature cards ("03/", "04/") follow in a dense grid.
 
-GradPaid first viewport: status line "AGENTS ONLINE · PAYPAL SANDBOX", headline "THE LOAN GETS PAID.", mono
-subhead "Give once. An agent splits the gift, pays the servicer by PayPal, and writes every cent to a ledger.",
-stat tiles for Raised, Paid to servicers, Sponsor match due, Agent runs.
+GradPaid first viewport: headline "THE LOAN GETS PAID.", mono subhead "Give once. An agent splits the gift,
+pays the loan servicer by PayPal, and writes every cent to a public ledger.", stat tiles for System status,
+Raised, Paid to servicers, Still owed on goals.
+
+Label type (label-md) is used for card indices, stat eyebrows, table headers and badges. It is never placed as
+its own block directly above a heading; headings carry their own weight. Pulse animation is reserved for
+indicators tied to genuinely live data (an agent working), never for decoration in the nav.
 
 ## Colors
 
@@ -124,7 +128,9 @@ responsive stacking seen in the HTML. Do not replace distinctive source structur
   3-column grid with 16px gutters and no outer margin inside their container.
 - Cards may butt against each other inside a bordered container (one shared border), which is the source's
   signature; prefer that to floating islands with large gaps.
-- Sticky top nav, 64px tall, surface background, hairline bottom border.
+- Sticky top nav, 64px tall, surface background, hairline bottom border. The hero sits directly on the page
+  background with the dot grid behind it; stat tiles are the only bordered container in the first viewport
+  (no card inside a card).
 
 ## Components
 
