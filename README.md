@@ -51,6 +51,13 @@ Environment variables:
 | `DEMO_TOKEN`                               | Bearer token for the Agent console reset and run buttons                           |
 | `NEXT_PUBLIC_APP_URL`                      | Public base URL, used to scope the PayPal client token                             |
 
+## PayPal sandbox setup
+
+1. In the Developer Dashboard create a REST app (sandbox) and copy the client id and secret.
+2. On the app's Features, enable Payouts and Transaction Search. Without Transaction Search the reconciliation step logs a 403 and continues.
+3. Under Sandbox accounts create two extra Business accounts, one to play the loan servicer and one to play the matching sponsor, and put their emails in `PAYPAL_SERVICER_EMAIL` and `PAYPAL_SPONSOR_EMAIL`. The default Personal account is the funded buyer for checkout.
+4. Optional: create a webhook for `PAYMENT.CAPTURE.COMPLETED` pointing at `/api/webhooks/paypal` and set `PAYPAL_WEBHOOK_ID`.
+
 ## Judge path
 
 1. Open the hosted URL. The landing page lists three verified campaigns.
