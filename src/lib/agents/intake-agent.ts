@@ -1,6 +1,7 @@
 import { generateText, tool, type CoreMessage } from 'ai';
 import { z } from 'zod';
 import { extractionModel } from './model';
+import { logger } from '@/lib/logger';
 
 /**
  * Structured extraction via a single tool the model is asked to call. Claude 5 rejects
@@ -20,7 +21,11 @@ async function callTool<T extends z.ZodTypeAny>(
   });
   const call = result.toolCalls.find((c) => c.toolName === name);
   if (!call) {
-    throw new Error(`Model did not call ${name}: ${result.text.slice(0, 200)}`);
+    logger.warn(
+      { tool: name, finishReason: result.finishReason, textLength: result.text.length },
+      'extraction model did not call its tool',
+    );
+    throw new Error(`Model did not call ${name}`);
   }
   return schema.parse(call.args);
 }
