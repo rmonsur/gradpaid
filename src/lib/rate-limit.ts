@@ -16,8 +16,9 @@ interface Window {
 const UNKNOWN_CLIENT = 'unknown';
 /** Hard ceiling on tracked keys. */
 const MAX_TRACKED_KEYS = 10_000;
-/** When the map is full of live windows, new clients share this bucket and are limited together. */
+/** When the map is full of live windows, new clients share this bucket with a wider limit. */
 const OVERFLOW_KEY = '__overflow__';
+const OVERFLOW_LIMIT_MULTIPLIER = 10;
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -27,12 +28,16 @@ const HTTP_TOO_MANY_REQUESTS = 429;
 export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   const windows = new Map<string, Window>();
 
-  /** Drops expired windows; only runs when the map is full, so the scan is bounded and rare. */
-  function pruneExpired(now: number): void {
+  /**
+   * The map is kept in window start order (fresh windows are re-inserted at the back), so
+   * expired entries sit at the front and pruning stops at the first live one: O(expired), not O(n).
+   */
+  function popExpired(now: number): void {
     for (const [k, w] of windows) {
-      if (now - w.startedAt >= options.windowMs) {
-        windows.delete(k);
+      if (now - w.startedAt < options.windowMs) {
+        return;
       }
+      windows.delete(k);
     }
   }
 
@@ -41,7 +46,7 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
     if (windows.has(key) || windows.size < MAX_TRACKED_KEYS) {
       return key;
     }
-    pruneExpired(now);
+    popExpired(now);
     return windows.size < MAX_TRACKED_KEYS ? key : OVERFLOW_KEY;
   }
 
@@ -49,13 +54,18 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
     hit: (key: string): boolean => {
       const now = Date.now();
       const bucket = bucketFor(key, now);
+      const limit =
+        bucket === OVERFLOW_KEY ? options.limit * OVERFLOW_LIMIT_MULTIPLIER : options.limit;
       const current = windows.get(bucket);
       const fresh = !current || now - current.startedAt >= options.windowMs;
-      const next: Window = fresh
-        ? { startedAt: now, count: 1 }
-        : { startedAt: current.startedAt, count: current.count + 1 };
+      if (fresh) {
+        windows.delete(bucket);
+        windows.set(bucket, { startedAt: now, count: 1 });
+        return limit >= 1;
+      }
+      const next: Window = { startedAt: current.startedAt, count: current.count + 1 };
       windows.set(bucket, next);
-      return next.count <= options.limit;
+      return next.count <= limit;
     },
   };
 }
