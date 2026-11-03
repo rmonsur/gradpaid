@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 export interface RateLimiterOptions {
   readonly limit: number;
   readonly windowMs: number;
@@ -19,17 +21,53 @@ const MAX_TRACKED_KEYS = 10_000;
 /**
  * When the map is full of live windows, a new client is limited together with its network
  * neighbours (IPv4 /24, IPv6 /64) at the normal limit: fail closed, and one flooding network
- * cannot consume the budget of unrelated networks. A shared store would replace this at scale.
+ * cannot consume the budget of unrelated networks. The overflow namespace is itself capped;
+ * past that cap, and for anything that is not a valid address, one global bucket applies.
+ * A shared store would replace this at scale.
  */
 const OVERFLOW_PREFIX = '__net__';
+const GLOBAL_OVERFLOW_KEY = '__net__all';
+const MAX_OVERFLOW_BUCKETS = 1_000;
 const IPV4_PREFIX_OCTETS = 3;
-const IPV6_PREFIX_HEXTETS = 4;
+const IPV6_GROUPS = 8;
+const IPV6_PREFIX_GROUPS = 4;
+const IPV4_MAPPED_PREFIX = '::ffff:';
+const IP_V4 = 4;
+const IP_V6 = 6;
+
+/** Expands '::' so every IPv6 address has eight groups; returns undefined for malformed input. */
+function expandIpv6(address: string): readonly string[] | undefined {
+  const [head, tail, extra] = address.split('::');
+  if (extra !== undefined) {
+    return undefined;
+  }
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const missing = IPV6_GROUPS - left.length - right.length;
+  if (missing < 0 || (tail === undefined && missing !== 0)) {
+    return undefined;
+  }
+  return [...left, ...Array.from({ length: missing }, () => '0'), ...right].map((g) =>
+    g.padStart(4, '0').toLowerCase(),
+  );
+}
 
 function networkBucket(key: string): string {
-  if (key.includes(':')) {
-    return `${OVERFLOW_PREFIX}${key.split(':').slice(0, IPV6_PREFIX_HEXTETS).join(':')}`;
+  const bare = key.replace(/%.*$/, '');
+  const unmapped = bare.toLowerCase().startsWith(IPV4_MAPPED_PREFIX)
+    ? bare.slice(IPV4_MAPPED_PREFIX.length)
+    : bare;
+  const version = isIP(unmapped);
+  if (version === IP_V4) {
+    return `${OVERFLOW_PREFIX}${unmapped.split('.').slice(0, IPV4_PREFIX_OCTETS).join('.')}`;
   }
-  return `${OVERFLOW_PREFIX}${key.split('.').slice(0, IPV4_PREFIX_OCTETS).join('.')}`;
+  if (version === IP_V6) {
+    const groups = expandIpv6(unmapped);
+    if (groups) {
+      return `${OVERFLOW_PREFIX}${groups.slice(0, IPV6_PREFIX_GROUPS).join(':')}`;
+    }
+  }
+  return GLOBAL_OVERFLOW_KEY;
 }
 const HTTP_TOO_MANY_REQUESTS = 429;
 
@@ -39,6 +77,7 @@ const HTTP_TOO_MANY_REQUESTS = 429;
  */
 export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
   const windows = new Map<string, Window>();
+  let overflowBuckets = 0;
 
   /**
    * The map is kept in window start order (fresh windows are re-inserted at the back), so
@@ -62,7 +101,14 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
       return key;
     }
     popExpired(now);
-    return windows.size < MAX_TRACKED_KEYS ? key : networkBucket(key);
+    if (windows.size < MAX_TRACKED_KEYS) {
+      return key;
+    }
+    const bucket = networkBucket(key);
+    if (windows.has(bucket) || overflowBuckets < MAX_OVERFLOW_BUCKETS) {
+      return bucket;
+    }
+    return GLOBAL_OVERFLOW_KEY;
   }
 
   return {
@@ -73,6 +119,9 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
       const current = windows.get(bucket);
       const fresh = !current || now - current.startedAt >= options.windowMs;
       if (fresh) {
+        if (!current && bucket.startsWith(OVERFLOW_PREFIX)) {
+          overflowBuckets += 1;
+        }
         windows.delete(bucket);
         windows.set(bucket, { startedAt: now, count: 1 });
         return limit >= 1;

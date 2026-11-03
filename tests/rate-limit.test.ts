@@ -48,6 +48,12 @@ describe('tracked key ceiling', () => {
     const sameNet = ['203.0.113.1', '203.0.113.2', '203.0.113.3'].map((ip) => limiter.hit(ip));
     expect(sameNet).toEqual([true, true, false]);
     expect(limiter.hit('198.51.100.7')).toBe(true);
+    const sameV6 = ['2001:db8::1', '2001:0db8:0000:0000::2', '2001:db8::3'].map((ip) =>
+      limiter.hit(ip),
+    );
+    expect(sameV6).toEqual([true, true, false]);
+    expect(limiter.hit('::ffff:203.0.113.9')).toBe(false);
+    expect(limiter.hit('not-an-ip')).toBe(true);
   });
 
   it('frees room for new clients once old windows expire', () => {
