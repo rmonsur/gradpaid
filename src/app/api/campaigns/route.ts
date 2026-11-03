@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { ok, handle } from '@/lib/http';
+import { ok, fail, handle } from '@/lib/http';
+import { verifyLoanFacts } from '@/lib/intake-token';
 import { listActiveCampaigns, createCampaign } from '@/features/campaigns/service';
 import { indexCampaign } from '@/features/search/service';
 
@@ -22,12 +23,16 @@ const createSchema = z.object({
   interestRateBps: z.number().int().nonnegative(),
   monthlyPaymentCents: z.number().int().nonnegative(),
   goalCents: z.number().int().positive(),
+  intakeToken: z.string().length(64),
 });
 
 export async function POST(req: Request): Promise<Response> {
   return handle(async () => {
     const input = createSchema.parse(await req.json());
-    const { displayName, email, ...campaignFields } = input;
+    const { displayName, email, intakeToken, ...campaignFields } = input;
+    if (!verifyLoanFacts(campaignFields, intakeToken)) {
+      return fail('Loan facts do not match what the intake agent read from the statement', 401);
+    }
     const created = await createCampaign({
       borrower: { displayName, email },
       campaign: { ...campaignFields, status: 'active', verified: true },

@@ -58,6 +58,7 @@ export function PublishStep({
           interestRateBps: intake.facts.interestRateBps,
           monthlyPaymentCents: intake.facts.monthlyPaymentCents,
           goalCents,
+          intakeToken: intake.intakeToken,
         }),
       });
       const body = (await res.json()) as ApiEnvelope<CreatedCampaign>;

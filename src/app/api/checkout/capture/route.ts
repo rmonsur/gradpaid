@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { ok, fail, handle } from '@/lib/http';
 import { createPayPalToolkit } from '@/lib/paypal/toolkit';
 import { getOrderByPayPalId, markCaptured } from '@/features/giving/service';
+import { parsePayPalAmount } from '@/lib/money';
+import { logger } from '@/lib/logger';
 
 const bodySchema = z.object({ orderId: z.string().min(5) });
 
@@ -10,7 +12,11 @@ interface CaptureResponse {
   readonly status?: string;
   readonly purchase_units?: readonly {
     readonly payments?: {
-      readonly captures?: readonly { readonly id: string; readonly status: string }[];
+      readonly captures?: readonly {
+        readonly id: string;
+        readonly status: string;
+        readonly amount?: { readonly value: string; readonly currency_code: string };
+      }[];
     };
   }[];
 }
@@ -47,6 +53,15 @@ export async function POST(req: Request): Promise<Response> {
         `Capture not completed (status ${capture?.status ?? raw.status ?? 'unknown'})`,
         502,
       );
+    }
+    const capturedCents = capture.amount ? parsePayPalAmount(capture.amount.value) : -1;
+    const currencyOk = capture.amount?.currency_code === existing.currency;
+    if (capturedCents !== existing.totalCents || !currencyOk) {
+      logger.error(
+        { orderId, capturedCents, expected: existing.totalCents },
+        'capture amount mismatch',
+      );
+      return fail('Captured amount does not match the recorded order', 409);
     }
     const updated = await markCaptured(orderId, capture.id);
     return ok({ orderId, captureId: capture.id, status: updated?.status ?? 'captured' });

@@ -4,6 +4,8 @@ import { withActivity, createActivityRecorder } from './activity';
 import { createPayPalToolkit, DISBURSEMENT_ACTIONS } from '@/lib/paypal/toolkit';
 import { createPayoutTools } from '@/lib/paypal/payouts-tool';
 import { createDisbursementLocalTools } from './disbursement-tools';
+import { tool, type Tool } from 'ai';
+import { z } from 'zod';
 import { startRun, finishRun } from '@/features/runs/service';
 import { getEnv } from '@/lib/env';
 import { MAX_AGENT_STEPS } from '@/lib/constants';
@@ -21,7 +23,31 @@ Run this procedure exactly once:
 4. list_transactions for the last 7 days, then record_reconciliation comparing captured donation amounts you can see against the ledger expectations. Report mismatches, never silently fix them.
 5. Finish with a two-sentence plain-English summary of what moved.
 
+In dry-run mode every tool simulates its effect and returns simulated: true. Run all five steps exactly as you would for real, do not skip or ask for confirmation, and say clearly in the summary that nothing moved.
+
+If list_transactions fails, continue to record_reconciliation with checkedCount 0 and one mismatch describing the failure.
+
 Convert cents to dollars only when a PayPal tool asks for a dollar string.`;
+
+/** Dry-run stand-ins for the PayPal invoice tools so no sandbox invoice is created. */
+function simulatedInvoiceTools(): Readonly<Record<string, Tool>> {
+  return {
+    create_invoice: tool({
+      description: 'Simulated: create a PayPal invoice (dry run).',
+      parameters: z.object({}).passthrough(),
+      execute: async (): Promise<unknown> => ({
+        id: 'INV2-DRYRUN-0000',
+        simulated: true,
+        dryRun: true,
+      }),
+    }),
+    send_invoice: tool({
+      description: 'Simulated: send a PayPal invoice (dry run).',
+      parameters: z.object({ invoice_id: z.string() }).passthrough(),
+      execute: async (): Promise<unknown> => ({ ok: true, simulated: true, dryRun: true }),
+    }),
+  };
+}
 
 export interface DisbursementRunResult {
   readonly runId: string;
@@ -44,7 +70,12 @@ export async function runDisbursementAgent(
     dryRun,
   });
   const tools = withActivity(
-    { ...createDisbursementLocalTools(run.id), ...payoutTools, ...paypal.tools },
+    {
+      ...createDisbursementLocalTools(run.id, dryRun),
+      ...payoutTools,
+      ...paypal.tools,
+      ...(dryRun ? simulatedInvoiceTools() : {}),
+    },
     recorder,
   );
   try {

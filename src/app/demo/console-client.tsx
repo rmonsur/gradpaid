@@ -144,7 +144,7 @@ export function ConsoleClient(): React.ReactElement {
           </div>
         </Card>
 
-        <RunsSection refreshKey={refreshKey} />
+        <RunsSection refreshKey={refreshKey} token={hasToken ? token.trim() : undefined} />
       </div>
 
       <div className="flex flex-col gap-4">

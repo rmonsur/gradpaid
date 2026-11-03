@@ -35,6 +35,7 @@ export interface IntakeResult {
   readonly facts: LoanFactsView;
   readonly draft: DraftView;
   readonly loanAccountRef: string;
+  readonly intakeToken: string;
 }
 
 export interface ApiEnvelope<T> {

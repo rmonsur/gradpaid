@@ -18,7 +18,7 @@ const bodySchema = z.object({
       z
         .object({
           id: z.string().optional(),
-          role: z.enum(['user', 'assistant', 'system']),
+          role: z.enum(['user', 'assistant']),
           content: z.string(),
         })
         .passthrough(),

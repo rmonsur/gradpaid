@@ -19,8 +19,12 @@ function maskRef(ref: string): string {
 }
 
 /** Local (non-PayPal) tools the disbursement agent uses to read the plan and write the ledger. */
-export function createDisbursementLocalTools(agentRunId: string): Readonly<Record<string, Tool>> {
+export function createDisbursementLocalTools(
+  agentRunId: string,
+  dryRun: boolean,
+): Readonly<Record<string, Tool>> {
   const env = getEnv();
+  const simulated = { simulated: true, dryRun: true };
   return {
     get_disbursement_plan: tool({
       description:
@@ -52,6 +56,9 @@ export function createDisbursementLocalTools(agentRunId: string): Readonly<Recor
         pledgeIds: z.array(z.string()).min(1),
       }),
       execute: async ({ campaignId, amountCents, pledgeIds }): Promise<unknown> => {
+        if (dryRun) {
+          return { disbursementId: `dry_${campaignId}`, ...simulated };
+        }
         const d = await createDisbursement(campaignId, amountCents, agentRunId);
         await attachPledgesToDisbursement(pledgeIds, d.id);
         return { disbursementId: d.id };
@@ -70,6 +77,9 @@ export function createDisbursementLocalTools(agentRunId: string): Readonly<Recor
         detail: z.string().optional(),
       }),
       execute: async (input): Promise<unknown> => {
+        if (dryRun) {
+          return { ok: true, ...simulated };
+        }
         await markDisbursement(
           input.disbursementId,
           input.ok ? 'sent' : 'failed',
@@ -141,6 +151,9 @@ export function createDisbursementLocalTools(agentRunId: string): Readonly<Recor
         amountCents: z.number().int().positive(),
       }),
       execute: async (input): Promise<unknown> => {
+        if (dryRun) {
+          return { ok: true, ...simulated };
+        }
         await recordInvoice({ ...input, status: 'sent' });
         await addMatched(input.sponsorId, input.amountCents);
         await appendLedger({
@@ -169,6 +182,9 @@ export function createDisbursementLocalTools(agentRunId: string): Readonly<Recor
         ),
       }),
       execute: async ({ checkedCount, mismatches }): Promise<unknown> => {
+        if (dryRun) {
+          return { ok: true, ...simulated, checkedCount, mismatches };
+        }
         for (const m of mismatches) {
           await recordException({ agentRunId, ...m });
         }

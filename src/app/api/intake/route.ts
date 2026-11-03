@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ok, fail, handle } from '@/lib/http';
 import { extractLoanFacts, draftCampaign, type IntakeFile } from '@/lib/agents/intake-agent';
 import { ALLOWED_STATEMENT_TYPES, MAX_STATEMENT_BYTES } from '@/lib/constants';
+import { signLoanFacts } from '@/lib/intake-token';
 
 export const maxDuration = 60;
 
@@ -38,10 +39,12 @@ export async function POST(req: Request): Promise<Response> {
     };
     const facts = await extractLoanFacts(intake);
     const draft = await draftCampaign({ facts, ...fields });
+    const intakeToken = signLoanFacts(facts);
     return ok({
       facts: { ...facts, loanAccountRef: `****${facts.loanAccountRef.slice(-4)}` },
       draft,
       loanAccountRef: facts.loanAccountRef,
+      intakeToken,
     });
   });
 }

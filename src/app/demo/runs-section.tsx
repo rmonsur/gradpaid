@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentRun, ToolCallRecord } from '@/db/schema';
-import { apiFetch } from '@/lib/api-client';
+import { apiFetch, bearer } from '@/lib/api-client';
 import { Badge, Button, Card } from '@/components/ui';
 import { ActivityPanel, type ActivityItem } from '@/components/activity-panel';
 
@@ -35,7 +35,13 @@ function formatWhen(value: Date | string): string {
   });
 }
 
-export function RunsSection({ refreshKey }: { refreshKey: number }): React.ReactElement {
+export function RunsSection({
+  refreshKey,
+  token,
+}: {
+  refreshKey: number;
+  token?: string;
+}): React.ReactElement {
   const [runs, setRuns] = useState<readonly AgentRun[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -44,7 +50,8 @@ export function RunsSection({ refreshKey }: { refreshKey: number }): React.React
 
   useEffect(() => {
     let active = true;
-    void apiFetch<AgentRun[]>('/api/runs').then((res) => {
+    const init = token ? { headers: bearer(token) } : undefined;
+    void apiFetch<AgentRun[]>('/api/runs', init).then((res) => {
       if (!active) {
         return;
       }
@@ -58,7 +65,7 @@ export function RunsSection({ refreshKey }: { refreshKey: number }): React.React
     return (): void => {
       active = false;
     };
-  }, [refreshKey, tick]);
+  }, [refreshKey, tick, token]);
 
   const load = useCallback((): void => {
     setTick((t) => t + 1);

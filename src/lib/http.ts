@@ -28,9 +28,8 @@ export function handle<T>(
         400,
       );
     }
-    const message = err instanceof Error ? err.message : 'Unexpected error';
     logger.error({ err }, 'request failed');
-    return fail(message, 500);
+    return fail('Something went wrong on our side. The error has been logged.', 500);
   }) as Promise<NextResponse<ApiEnvelope<T>>>;
 }
 

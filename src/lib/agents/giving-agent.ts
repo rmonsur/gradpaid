@@ -7,7 +7,7 @@ import { searchCampaigns } from '@/features/search/service';
 import { splitDonation } from '@/features/campaigns/split';
 import { getCampaignsByIds, toSummary } from '@/features/campaigns/service';
 import { recordOrder } from '@/features/giving/service';
-import { fromCents } from '@/lib/money';
+import { fromCents, parsePayPalAmount, DEFAULT_CURRENCY } from '@/lib/money';
 import { MAX_AGENT_STEPS, MAX_SPLIT_CAMPAIGNS } from '@/lib/constants';
 
 const SYSTEM_PROMPT = `You are the GradPaid giving agent. You help a donor direct one PayPal payment to the student loan balances of verified graduates. Money goes to the loan servicer, never to the borrower.
@@ -26,7 +26,42 @@ export interface GivingAgentInput {
   readonly donorName: string;
 }
 
-function buildLocalTools(donorName: string): Readonly<Record<string, Tool>> {
+interface OrderLookup {
+  readonly id?: string;
+  readonly status?: string;
+  readonly purchase_units?: readonly {
+    readonly amount?: { readonly value: string; readonly currency_code: string };
+  }[];
+}
+
+/** Reads the order back from PayPal so a recorded split can never disagree with the real order. */
+async function verifyPayPalOrder(
+  paypalTools: Readonly<Record<string, Tool>>,
+  paypalOrderId: string,
+  totalCents: number,
+): Promise<string | null> {
+  const getOrder = paypalTools.get_order;
+  if (!getOrder?.execute) {
+    return 'get_order unavailable';
+  }
+  const raw = (await getOrder.execute(
+    { id: paypalOrderId },
+    { toolCallId: paypalOrderId, messages: [] },
+  )) as OrderLookup;
+  const amount = raw.purchase_units?.[0]?.amount;
+  if (!amount || amount.currency_code !== DEFAULT_CURRENCY) {
+    return 'order not found or wrong currency';
+  }
+  if (parsePayPalAmount(amount.value) !== totalCents) {
+    return `order total ${amount.value} does not match ${fromCents(totalCents).toFixed(2)}`;
+  }
+  return null;
+}
+
+function buildLocalTools(
+  donorName: string,
+  paypalTools: Readonly<Record<string, Tool>>,
+): Readonly<Record<string, Tool>> {
   return {
     search_campaigns: tool({
       description: 'Search verified, active loan campaigns by the donor intent in plain language.',
@@ -89,6 +124,17 @@ function buildLocalTools(donorName: string): Readonly<Record<string, Tool>> {
         ),
       }),
       execute: async (input): Promise<unknown> => {
+        const problem = await verifyPayPalOrder(paypalTools, input.paypalOrderId, input.totalCents);
+        if (problem) {
+          return { error: `PayPal order check failed: ${problem}` };
+        }
+        const rows = await getCampaignsByIds(input.split.map((l) => l.campaignId));
+        const inactive = input.split.filter(
+          (l) => !rows.some((r) => r.id === l.campaignId && r.status === 'active'),
+        );
+        if (inactive.length > 0) {
+          return { error: 'split references a campaign that is not active' };
+        }
         const order = await recordOrder({ ...input, donorName });
         return { ok: true, paypalOrderId: order.paypalOrderId, totalCents: order.totalCents };
       },
@@ -99,7 +145,10 @@ function buildLocalTools(donorName: string): Readonly<Record<string, Tool>> {
 export function runGivingAgent(input: GivingAgentInput): ReturnType<typeof streamText> {
   const recorder = createActivityRecorder();
   const paypal = createPayPalToolkit(GIVING_ACTIONS);
-  const tools = withActivity({ ...buildLocalTools(input.donorName), ...paypal.tools }, recorder);
+  const tools = withActivity(
+    { ...buildLocalTools(input.donorName, paypal.tools), ...paypal.tools },
+    recorder,
+  );
   return streamText({
     model: agentModel(),
     system: SYSTEM_PROMPT,
