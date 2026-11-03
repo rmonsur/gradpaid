@@ -1,4 +1,4 @@
-import type { ApiEnvelope } from '@/lib/http';
+import type { ApiEnvelope } from '@/lib/envelope';
 
 export interface ApiResult<T> {
   readonly ok: boolean;

@@ -1,14 +1,20 @@
 import { z } from 'zod';
+import { CAMPAIGN_LIMITS } from '@/features/campaigns/limits';
+import { fromCents } from '@/lib/money';
 import { ALLOWED_STATEMENT_TYPES, MAX_STATEMENT_BYTES } from '@/lib/constants';
 
 export const MAX_GOAL_DEFAULT_CENTS = 500_000;
 export const LOW_CONFIDENCE_THRESHOLD = 0.7;
 
 export const uploadSchema = z.object({
-  displayName: z.string().trim().min(1, 'Name is required').max(80),
+  displayName: z.string().trim().min(1, 'Name is required').max(CAMPAIGN_LIMITS.nameMax),
   email: z.string().trim().email('Enter a valid email'),
   school: z.string().trim().min(2, 'School is required').max(120),
-  fieldOfStudy: z.string().trim().min(2, 'Field of study is required').max(80),
+  fieldOfStudy: z
+    .string()
+    .trim()
+    .min(CAMPAIGN_LIMITS.fieldMin, 'Field of study is required')
+    .max(CAMPAIGN_LIMITS.fieldMax),
   state: z.string().length(2, 'Pick a state'),
   aboutMe: z.string().trim().max(600, 'Keep this under 600 characters'),
 });
@@ -38,11 +44,7 @@ export interface IntakeResult {
   readonly intakeToken: string;
 }
 
-export interface ApiEnvelope<T> {
-  readonly success: boolean;
-  readonly data: T | null;
-  readonly error: string | null;
-}
+export type { ApiEnvelope } from '@/lib/envelope';
 
 export interface ReviewFields {
   readonly title: string;
@@ -66,7 +68,7 @@ export function validateStatementFile(file: File | null): string | null {
 
 export function defaultGoalDollars(balanceCents: number): string {
   const cents = Math.min(balanceCents, MAX_GOAL_DEFAULT_CENTS);
-  return (cents / 100).toFixed(2);
+  return fromCents(cents).toFixed(2);
 }
 
 export function parseTags(text: string): readonly string[] {
@@ -77,5 +79,5 @@ export function parseTags(text: string): readonly string[] {
         .map((t) => t.trim().toLowerCase())
         .filter((t) => t.length > 0),
     ),
-  ].slice(0, 6);
+  ].slice(0, CAMPAIGN_LIMITS.tagsMax);
 }

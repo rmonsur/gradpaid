@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CAMPAIGN_LIMITS } from '@/features/campaigns/limits';
 import { ok, fail, handle } from '@/lib/http';
 import { verifyLoanFacts } from '@/lib/intake-token';
 import { listActiveCampaigns, createCampaign } from '@/features/campaigns/service';
@@ -9,16 +10,16 @@ export async function GET(): Promise<Response> {
 }
 
 const createSchema = z.object({
-  displayName: z.string().min(1).max(80),
+  displayName: z.string().min(1).max(CAMPAIGN_LIMITS.nameMax),
   email: z.string().email(),
-  title: z.string().min(4).max(80),
-  story: z.string().min(20).max(900),
+  title: z.string().min(CAMPAIGN_LIMITS.titleMin).max(CAMPAIGN_LIMITS.titleMax),
+  story: z.string().min(CAMPAIGN_LIMITS.storyMin).max(CAMPAIGN_LIMITS.storyMax),
   school: z.string().min(2).max(120),
-  fieldOfStudy: z.string().min(2).max(80),
+  fieldOfStudy: z.string().min(CAMPAIGN_LIMITS.fieldMin).max(CAMPAIGN_LIMITS.fieldMax),
   state: z.string().length(2),
-  cohortTags: z.array(z.string().min(1).max(30)).max(6),
+  cohortTags: z.array(z.string().min(1).max(CAMPAIGN_LIMITS.tagMax)).max(CAMPAIGN_LIMITS.tagsMax),
   servicerName: z.string().min(2).max(60),
-  loanAccountRef: z.string().min(4).max(40),
+  loanAccountRef: z.string().min(CAMPAIGN_LIMITS.loanRefMin).max(CAMPAIGN_LIMITS.loanRefMax),
   balanceCents: z.number().int().nonnegative(),
   interestRateBps: z.number().int().nonnegative(),
   monthlyPaymentCents: z.number().int().nonnegative(),

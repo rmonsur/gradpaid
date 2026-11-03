@@ -3,6 +3,8 @@ import { convertToCoreMessages, type Message } from 'ai';
 import { runGivingAgent } from '@/lib/agents/giving-agent';
 import { fail } from '@/lib/http';
 import { logger } from '@/lib/logger';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import { RATE_LIMITS } from '@/lib/rate-limits';
 
 export const maxDuration = 60;
 
@@ -29,6 +31,10 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request): Promise<Response> {
+  const limited = enforceRateLimit(req, RATE_LIMITS.chat);
+  if (limited) {
+    return limited;
+  }
   const parsed = bodySchema.safeParse(await req.json());
   if (!parsed.success) {
     return fail('Invalid chat request', 400);

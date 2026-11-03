@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AgentRun, ToolCallRecord } from '@/db/schema';
 import { apiFetch, bearer } from '@/lib/api-client';
+import { formatWhen } from '@/lib/format';
 import { Badge, Button, Card } from '@/components/ui';
 import { ActivityPanel, type ActivityItem } from '@/components/activity-panel';
 
@@ -25,15 +26,6 @@ const STATUS_TONES: Record<AgentRun['status'], 'accent' | 'success' | 'danger'> 
   success: 'success',
   failed: 'danger',
 };
-
-function formatWhen(value: Date | string): string {
-  return new Date(value).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 export function RunsSection({
   refreshKey,

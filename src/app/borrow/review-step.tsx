@@ -1,5 +1,6 @@
 'use client';
 
+import { CAMPAIGN_LIMITS } from '@/features/campaigns/limits';
 import { useState } from 'react';
 import { Badge, Button, Card } from '@/components/ui';
 import { formatUsd } from '@/lib/money';
@@ -42,11 +43,11 @@ export function ReviewStep({ intake, onBack, onContinue }: ReviewStepProps): Rea
 
   const next = (): void => {
     const goal = Number.parseFloat(review.goalDollars);
-    if (review.title.trim().length < 4) {
+    if (review.title.trim().length < CAMPAIGN_LIMITS.titleMin) {
       setError('Give your campaign a title of at least four characters.');
       return;
     }
-    if (review.story.trim().length < 20) {
+    if (review.story.trim().length < CAMPAIGN_LIMITS.storyMin) {
       setError('Your story needs at least twenty characters.');
       return;
     }

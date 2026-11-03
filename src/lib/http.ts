@@ -3,11 +3,9 @@ import { ZodError } from 'zod';
 import { logger } from '@/lib/logger';
 import { getEnv } from '@/lib/env';
 
-export interface ApiEnvelope<T> {
-  readonly success: boolean;
-  readonly data: T | null;
-  readonly error: string | null;
-}
+import type { ApiEnvelope } from '@/lib/envelope';
+
+export type { ApiEnvelope };
 
 export function ok<T>(data: T, status = 200): NextResponse<ApiEnvelope<T>> {
   return NextResponse.json({ success: true, data, error: null }, { status });

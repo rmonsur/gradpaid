@@ -67,11 +67,7 @@ export async function sendPayout(
     body: buildPayoutBody(req),
     requestId: payoutItemKey(req.disbursementId),
   });
-  return {
-    batchId: res.batch_header.payout_batch_id,
-    batchStatus: res.batch_header.batch_status,
-    itemId: res.items?.[0]?.payout_item_id,
-  };
+  return toPayoutResult(res);
 }
 
 export async function getPayoutBatch(
@@ -82,6 +78,10 @@ export async function getPayoutBatch(
     method: 'GET',
     path: `/v1/payments/payouts/${encodeURIComponent(batchId)}`,
   });
+  return toPayoutResult(res);
+}
+
+function toPayoutResult(res: PayoutApiResponse): PayoutResult {
   return {
     batchId: res.batch_header.payout_batch_id,
     batchStatus: res.batch_header.batch_status,

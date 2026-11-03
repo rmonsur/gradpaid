@@ -3,6 +3,9 @@ import { getDb } from '@/db/client';
 import { campaigns, borrowers, type Campaign, type NewCampaign } from '@/db/schema';
 import { newId } from '@/lib/ids';
 
+/** Words shorter than this are ignored by the Postgres fallback search. */
+const MIN_SEARCH_TERM_CHARS = 3;
+
 export interface CampaignSummary {
   readonly id: string;
   readonly title: string;
@@ -107,7 +110,7 @@ export async function searchCampaignsInPostgres(
   const terms = query
     .toLowerCase()
     .split(/\s+/)
-    .filter((t) => t.length > 2);
+    .filter((t) => t.length >= MIN_SEARCH_TERM_CHARS);
   const haystack = sql`lower(${campaigns.title} || ' ' || ${campaigns.story} || ' ' || ${campaigns.school} || ' ' || ${campaigns.fieldOfStudy} || ' ' || ${campaigns.state} || ' ' || array_to_string(${campaigns.cohortTags}, ' '))`;
   const score = sql.join(
     terms.map((t) => sql`(case when ${haystack} like ${`%${t}%`} then 1 else 0 end)`),

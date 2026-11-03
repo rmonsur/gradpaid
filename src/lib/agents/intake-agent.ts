@@ -1,5 +1,6 @@
 import { generateText, tool, type CoreMessage } from 'ai';
 import { z } from 'zod';
+import { CAMPAIGN_LIMITS } from '@/features/campaigns/limits';
 import { extractionModel } from './model';
 import { logger } from '@/lib/logger';
 
@@ -90,9 +91,9 @@ export async function extractLoanFacts(file: IntakeFile): Promise<LoanFacts> {
 }
 
 export const draftSchema = z.object({
-  title: z.string().max(80),
-  story: z.string().max(900),
-  cohortTags: z.array(z.string()).max(6),
+  title: z.string().max(CAMPAIGN_LIMITS.titleMax),
+  story: z.string().max(CAMPAIGN_LIMITS.storyMax),
+  cohortTags: z.array(z.string()).max(CAMPAIGN_LIMITS.tagsMax),
 });
 
 export type CampaignDraft = z.infer<typeof draftSchema>;

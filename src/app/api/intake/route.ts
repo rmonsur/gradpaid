@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { maskLoanRef } from '@/lib/mask';
+import { enforceRateLimit } from '@/lib/rate-limit';
+import { RATE_LIMITS } from '@/lib/rate-limits';
 import { ok, fail, handle } from '@/lib/http';
 import { extractLoanFacts, draftCampaign, type IntakeFile } from '@/lib/agents/intake-agent';
 import { ALLOWED_STATEMENT_TYPES, MAX_STATEMENT_BYTES } from '@/lib/constants';
@@ -20,6 +23,10 @@ function isAllowedType(t: string): t is AllowedType {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const limited = enforceRateLimit(req, RATE_LIMITS.intake);
+  if (limited) {
+    return limited;
+  }
   return handle(async () => {
     const form = await req.formData();
     const file = form.get('statement');
@@ -41,7 +48,7 @@ export async function POST(req: Request): Promise<Response> {
     const draft = await draftCampaign({ facts, ...fields });
     const intakeToken = signLoanFacts(facts);
     return ok({
-      facts: { ...facts, loanAccountRef: `****${facts.loanAccountRef.slice(-4)}` },
+      facts: { ...facts, loanAccountRef: maskLoanRef(facts.loanAccountRef) },
       draft,
       loanAccountRef: facts.loanAccountRef,
       intakeToken,

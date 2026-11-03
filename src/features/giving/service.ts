@@ -1,9 +1,12 @@
-import { eq, isNull } from 'drizzle-orm';
+import { and, eq, gte, isNull, ne } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { orders, pledges, type Order, type Pledge, type SplitLine } from '@/db/schema';
 import { newId } from '@/lib/ids';
 import { addRaised } from '@/features/campaigns/service';
 import { appendLedger } from '@/features/ledger/service';
+
+/** PayPal refs with this prefix were seeded by the demo reset, not captured by PayPal. */
+export const SEED_REF_PREFIX = 'SEED-';
 
 export interface RecordOrderInput {
   readonly paypalOrderId: string;
@@ -35,8 +38,9 @@ export async function getOrderByPayPalId(paypalOrderId: string): Promise<Order |
 }
 
 /**
- * Marks an order captured and creates one pledge per split line. Idempotent: a second
- * call for an already captured order is a no-op so webhook plus polling cannot double count.
+ * Marks an order captured and creates one pledge per split line. The status flip is a single
+ * conditional UPDATE, so when the webhook and the polling route race only one caller gets the
+ * row back and writes pledges; the other sees the already captured order.
  */
 export async function markCaptured(
   paypalOrderId: string,
@@ -44,19 +48,19 @@ export async function markCaptured(
   agentRunId?: string,
 ): Promise<Order | undefined> {
   const db = getDb();
-  const existing = await getOrderByPayPalId(paypalOrderId);
-  if (!existing || existing.status === 'captured') {
-    return existing;
-  }
   const updated = await db
     .update(orders)
     .set({ status: 'captured', paypalCaptureId: captureId, capturedAt: new Date() })
-    .where(eq(orders.id, existing.id))
+    .where(and(eq(orders.paypalOrderId, paypalOrderId), ne(orders.status, 'captured')))
     .returning();
-  for (const line of existing.split) {
+  const won = updated[0];
+  if (!won) {
+    return getOrderByPayPalId(paypalOrderId);
+  }
+  for (const line of won.split) {
     await db.insert(pledges).values({
       id: newId('plg'),
-      orderId: existing.id,
+      orderId: won.id,
       campaignId: line.campaignId,
       cents: line.cents,
     });
@@ -65,26 +69,46 @@ export async function markCaptured(
       kind: 'donation_captured',
       campaignId: line.campaignId,
       amountCents: line.cents,
-      counterparty: existing.donorName,
+      counterparty: won.donorName,
       paypalRef: captureId,
       agentRunId,
       memo: `Donation captured for campaign ${line.campaignId}`,
     });
   }
-  return updated[0];
+  return won;
+}
+
+export interface CapturedOrderSummary {
+  readonly paypalOrderId: string;
+  readonly paypalRef: string;
+  readonly amountCents: number;
+  readonly capturedAt: Date;
+}
+
+/** Captured orders since a date, excluding seeded demo gifts that have no PayPal counterpart. */
+export async function listCapturedOrdersSince(
+  since: Date,
+): Promise<readonly CapturedOrderSummary[]> {
+  const rows = await getDb()
+    .select()
+    .from(orders)
+    .where(and(eq(orders.status, 'captured'), gte(orders.capturedAt, since)));
+  return rows.flatMap((o) =>
+    o.paypalCaptureId && o.capturedAt && !o.paypalCaptureId.startsWith(SEED_REF_PREFIX)
+      ? [
+          {
+            paypalOrderId: o.paypalOrderId,
+            paypalRef: o.paypalCaptureId,
+            amountCents: o.totalCents,
+            capturedAt: o.capturedAt,
+          },
+        ]
+      : [],
+  );
 }
 
 export async function listUndisbursedPledges(): Promise<readonly Pledge[]> {
   return getDb().select().from(pledges).where(isNull(pledges.disbursementId));
-}
-
-export async function attachPledgesToDisbursement(
-  pledgeIds: readonly string[],
-  disbursementId: string,
-): Promise<void> {
-  for (const id of pledgeIds) {
-    await getDb().update(pledges).set({ disbursementId }).where(eq(pledges.id, id));
-  }
 }
 
 export async function listOrders(): Promise<readonly Order[]> {

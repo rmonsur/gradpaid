@@ -12,6 +12,7 @@ import {
 } from 'ag-grid-community';
 import type { LedgerEntry } from '@/db/schema';
 import { formatUsd } from '@/lib/money';
+import { formatWhen } from '@/lib/format';
 import { apiFetch } from '@/lib/api-client';
 import { Badge, Card, Stat } from '@/components/ui';
 
@@ -73,12 +74,7 @@ function formatDate(params: ValueFormatterParams<LedgerEntry, string | Date>): s
   if (!params.value) {
     return '';
   }
-  return new Date(params.value).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatWhen(params.value);
 }
 
 function formatCents(params: ValueFormatterParams<LedgerEntry, number>): string {

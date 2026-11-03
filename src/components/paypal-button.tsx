@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
+import type { ApiEnvelope } from '@/lib/envelope';
 
 const SDK_URL = 'https://www.sandbox.paypal.com/web-sdk/v6/core';
 const SDK_SCRIPT_ID = 'paypal-web-sdk-v6';
@@ -13,12 +14,6 @@ type Phase =
   | { readonly kind: 'paying' }
   | { readonly kind: 'captured'; readonly captureId: string }
   | { readonly kind: 'error'; readonly message: string };
-
-interface Envelope<T> {
-  readonly success: boolean;
-  readonly data: T | null;
-  readonly error: string | null;
-}
 
 function loadSdk(): Promise<PayPalV6Namespace> {
   return new Promise((resolve, reject) => {
@@ -51,7 +46,7 @@ function loadSdk(): Promise<PayPalV6Namespace> {
 
 async function fetchClientToken(): Promise<string> {
   const res = await fetch('/api/paypal/client-token');
-  const body = (await res.json()) as Envelope<{ accessToken: string }>;
+  const body = (await res.json()) as ApiEnvelope<{ accessToken: string }>;
   if (!res.ok || !body.success || !body.data) {
     throw new Error(body.error ?? 'Could not get a PayPal client token');
   }
@@ -64,7 +59,7 @@ async function captureOrder(orderId: string): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId }),
   });
-  const body = (await res.json()) as Envelope<{ captureId: string | null }>;
+  const body = (await res.json()) as ApiEnvelope<{ captureId: string | null }>;
   if (!res.ok || !body.success || !body.data?.captureId) {
     throw new Error(body.error ?? 'Capture failed');
   }

@@ -87,7 +87,7 @@ export function ConsoleClient(): React.ReactElement {
             autoComplete="off"
             className="mt-2 w-full rounded-[var(--radius-control)] border border-border bg-background px-4 py-3 font-mono text-sm outline-none focus:border-accent"
           />
-          <p className="mt-1 text-xs text-muted">Found on the demo page in the README.</p>
+          <p className="mt-1 text-xs text-muted">Found on the Devpost submission page.</p>
 
           <div className="mt-5 flex flex-col gap-3">
             <div className="flex items-center gap-3">

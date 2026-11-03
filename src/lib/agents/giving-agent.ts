@@ -11,6 +11,9 @@ import { fromCents, parsePayPalAmount, DEFAULT_CURRENCY } from '@/lib/money';
 import { parseToolResult } from '@/lib/paypal/results';
 import { MAX_AGENT_STEPS, MAX_SPLIT_CAMPAIGNS } from '@/lib/constants';
 
+/** Characters of a story shown to the model per search hit. */
+const STORY_SUMMARY_CHARS = 220;
+
 const SYSTEM_PROMPT = `You are the GradPaid giving agent. You help a donor direct one PayPal payment to the student loan balances of verified graduates. Money goes to the loan servicer, never to the borrower.
 
 Follow this sequence and keep replies short and warm:
@@ -80,7 +83,7 @@ function buildLocalTools(
             state: c.state,
             cohortTags: c.cohortTags,
             remainingCents: c.remainingCents,
-            summary: c.story.slice(0, 220),
+            summary: c.story.slice(0, STORY_SUMMARY_CHARS),
           })),
         };
       },

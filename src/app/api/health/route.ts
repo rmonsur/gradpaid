@@ -1,4 +1,5 @@
 import { ok } from '@/lib/http';
+import { logger } from '@/lib/logger';
 import { getEnv, isElasticConfigured } from '@/lib/env';
 import { getDb } from '@/db/client';
 import { sql } from 'drizzle-orm';
@@ -16,7 +17,8 @@ async function probe(name: string, fn: () => Promise<string>): Promise<Check> {
   try {
     return { name, ok: true, detail: await fn() };
   } catch (err) {
-    return { name, ok: false, detail: err instanceof Error ? err.message : 'failed' };
+    logger.warn({ err, check: name }, 'health check failed');
+    return { name, ok: false, detail: 'unavailable' };
   }
 }
 
