@@ -37,16 +37,17 @@ describe('clientKey', () => {
 });
 
 describe('tracked key ceiling', () => {
-  it('never drops a live counter; new clients beyond the ceiling share one bucket at the normal limit', () => {
+  it('never drops a live counter; new clients beyond the ceiling are limited per network', () => {
     vi.useFakeTimers();
     const limiter = createRateLimiter({ limit: 2, windowMs: WINDOW_MS });
     for (let i = 0; i < 10_000; i += 1) {
-      limiter.hit(`k${i}`);
+      limiter.hit(`10.0.${Math.floor(i / 250)}.${i % 250}`);
     }
-    expect(limiter.hit('k0')).toBe(true);
-    expect(limiter.hit('k0')).toBe(false);
-    const overflowHits = Array.from({ length: 3 }, (_, i) => limiter.hit(`new-${i}`));
-    expect(overflowHits).toEqual([true, true, false]);
+    expect(limiter.hit('10.0.0.0')).toBe(true);
+    expect(limiter.hit('10.0.0.0')).toBe(false);
+    const sameNet = ['203.0.113.1', '203.0.113.2', '203.0.113.3'].map((ip) => limiter.hit(ip));
+    expect(sameNet).toEqual([true, true, false]);
+    expect(limiter.hit('198.51.100.7')).toBe(true);
   });
 
   it('frees room for new clients once old windows expire', () => {

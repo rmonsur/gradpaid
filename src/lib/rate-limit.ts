@@ -16,8 +16,21 @@ interface Window {
 const UNKNOWN_CLIENT = 'unknown';
 /** Hard ceiling on tracked keys. */
 const MAX_TRACKED_KEYS = 10_000;
-/** When the map is full of live windows, new clients share this bucket at the normal limit (fail closed). */
-const OVERFLOW_KEY = '__overflow__';
+/**
+ * When the map is full of live windows, a new client is limited together with its network
+ * neighbours (IPv4 /24, IPv6 /64) at the normal limit: fail closed, and one flooding network
+ * cannot consume the budget of unrelated networks. A shared store would replace this at scale.
+ */
+const OVERFLOW_PREFIX = '__net__';
+const IPV4_PREFIX_OCTETS = 3;
+const IPV6_PREFIX_HEXTETS = 4;
+
+function networkBucket(key: string): string {
+  if (key.includes(':')) {
+    return `${OVERFLOW_PREFIX}${key.split(':').slice(0, IPV6_PREFIX_HEXTETS).join(':')}`;
+  }
+  return `${OVERFLOW_PREFIX}${key.split('.').slice(0, IPV4_PREFIX_OCTETS).join('.')}`;
+}
 const HTTP_TOO_MANY_REQUESTS = 429;
 
 /**
@@ -49,7 +62,7 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
       return key;
     }
     popExpired(now);
-    return windows.size < MAX_TRACKED_KEYS ? key : OVERFLOW_KEY;
+    return windows.size < MAX_TRACKED_KEYS ? key : networkBucket(key);
   }
 
   return {
