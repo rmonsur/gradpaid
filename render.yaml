@@ -1,0 +1,57 @@
+services:
+  - type: web
+    name: gradpaid
+    runtime: node
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gradpaid-db
+          property: connectionString
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: PAYPAL_SERVICER_EMAIL
+        sync: false
+      - key: PAYPAL_SPONSOR_EMAIL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELASTIC_URL
+        sync: false
+      - key: ELASTIC_API_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      - key: DEMO_TOKEN
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+
+  - type: cron
+    name: gradpaid-disbursement
+    runtime: node
+    schedule: '0 */6 * * *'
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm disburse:cron
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+databases:
+  - name: gradpaid-db
+    plan: basic-256mb

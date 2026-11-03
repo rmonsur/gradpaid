@@ -1,69 +1,186 @@
-import Image from "next/image";
+import Link from 'next/link';
+import { APP_NAME, APP_TAGLINE } from '@/lib/constants';
+import { listActiveCampaigns, type CampaignSummary } from '@/features/campaigns/service';
+import { formatUsd } from '@/lib/money';
+import { Badge, Card, ProgressBar } from '@/components/ui';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+const STEPS = [
+  {
+    title: 'A graduate verifies a statement',
+    body: 'The intake agent reads a real loan statement and drafts a campaign. The borrower approves it. No account numbers are ever shown.',
+  },
+  {
+    title: 'A donor gives once with PayPal',
+    body: 'Tell the giving agent who you want to help. It finds verified campaigns, proposes a split, and creates one PayPal order.',
+  },
+  {
+    title: 'The agent pays the servicer',
+    body: 'The disbursement agent sends payouts to the loan servicer, invoices matching sponsors, and reconciles every cent against PayPal.',
+  },
+] as const;
+
+const PAYPAL_PRODUCTS = [
+  'PayPal Agent Toolkit',
+  'Orders',
+  'Invoicing',
+  'Payouts',
+  'Reporting',
+] as const;
+const SPONSORS = ['Elastic', 'AG Grid', 'Render', 'Postman'] as const;
+
+async function loadCampaigns(): Promise<readonly CampaignSummary[] | null> {
+  try {
+    return await listActiveCampaigns();
+  } catch {
+    return null;
+  }
+}
+
+function CampaignCard({ c }: { c: CampaignSummary }): React.ReactElement {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <Card className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-1.5">
+        {c.cohortTags.map((t) => (
+          <Badge key={t} tone="accent">
+            {t}
+          </Badge>
+        ))}
+      </div>
+      <h3 className="text-lg font-semibold leading-snug">{c.title}</h3>
+      <p className="text-sm text-muted">
+        {c.school} · {c.fieldOfStudy} · {c.state}
+      </p>
+      <p className="line-clamp-3 text-sm">{c.story}</p>
+      <div className="mt-auto space-y-2">
+        <ProgressBar value={c.raisedCents} max={c.goalCents} />
+        <div className="flex justify-between text-xs text-muted">
+          <span>{formatUsd(c.raisedCents)} raised</span>
+          <span>{formatUsd(c.goalCents)} goal</span>
+        </div>
+        <p className="text-xs text-muted">Paid to {c.servicerName}, never to the borrower.</p>
+      </div>
+      <Link href="/give" className="text-sm font-medium text-accent-strong hover:underline">
+        Give toward this loan
+      </Link>
+    </Card>
+  );
+}
+
+export default async function Home(): Promise<React.ReactElement> {
+  const campaigns = await loadCampaigns();
+  return (
+    <div className="space-y-16">
+      <section className="grid items-center gap-10 md:grid-cols-[1.2fr_1fr]">
+        <div className="space-y-6">
+          <Badge tone="accent">Built on the PayPal Agent Toolkit</Badge>
+          <h1 className="text-5xl font-semibold leading-tight tracking-tight">{APP_TAGLINE}</h1>
+          <p className="max-w-xl text-lg text-muted">
+            Forty-three million Americans carry student debt, and the people around them want to
+            help. Cash gifts get diverted, crowdfunding pays the borrower instead of the lender, and
+            nobody reconciles anything. {APP_NAME} is crowd-repayment where an AI agent routes every
+            dollar straight to the loan servicer.
           </p>
+          <div className="flex gap-3">
+            <Link
+              href="/give"
+              className="rounded-lg bg-accent-strong px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
+            >
+              Give toward a loan
+            </Link>
+            <Link
+              href="/borrow"
+              className="rounded-lg border border-border bg-surface px-5 py-2.5 text-sm font-medium transition hover:bg-accent-soft"
+            >
+              I am a borrower
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <Card className="space-y-4 bg-accent-strong text-white">
+          <div className="text-xs font-medium uppercase tracking-wide text-white/70">The rule</div>
+          <p className="text-2xl font-semibold leading-snug">
+            The money never touches the borrower.
+          </p>
+          <p className="text-sm text-white/80">
+            Donations are captured by PayPal, held by the platform, and paid out by an agent
+            directly to the servicer with the loan reference attached. Every step is on the public
+            ledger.
+          </p>
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-6 text-2xl font-semibold tracking-tight">How it works</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <Card key={s.title} className="space-y-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-mono text-sm font-semibold text-accent-strong">
+                {i + 1}
+              </div>
+              <h3 className="font-semibold">{s.title}</h3>
+              <p className="text-sm text-muted">{s.body}</p>
+            </Card>
+          ))}
         </div>
-      </main>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
+            Built on PayPal
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {PAYPAL_PRODUCTS.map((p) => (
+              <Badge key={p} tone="accent">
+                {p}
+              </Badge>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-muted">
+            Every PayPal action is a function-calling tool from the Agent Toolkit, executed by an
+            agent and shown on screen as it happens.
+          </p>
+        </Card>
+        <Card>
+          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
+            Powered by
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SPONSORS.map((s) => (
+              <Badge key={s}>{s}</Badge>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-muted">
+            Elastic matches donor intent to campaigns, AG Grid renders the public ledger, Render
+            hosts the app and the agent schedule, Postman monitors health.
+          </p>
+        </Card>
+      </section>
+
+      <section>
+        <div className="mb-6 flex items-end justify-between">
+          <h2 className="text-2xl font-semibold tracking-tight">Verified campaigns</h2>
+          <Link href="/give" className="text-sm font-medium text-accent-strong hover:underline">
+            Ask the giving agent
+          </Link>
+        </div>
+        {campaigns === null ? (
+          <Card className="text-center text-sm text-muted">
+            Campaigns are temporarily unavailable. Check the agent console for service health.
+          </Card>
+        ) : campaigns.length === 0 ? (
+          <Card className="text-center text-sm text-muted">
+            No active campaigns yet. Use the agent console to seed the demo.
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-3">
+            {campaigns.map((c) => (
+              <CampaignCard key={c.id} c={c} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

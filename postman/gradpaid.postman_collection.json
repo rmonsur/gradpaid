@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "GradPaid",
+    "description": "Health, demo reset, campaigns, and the disbursement agent. Set baseUrl and demoToken in the collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "demoToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/health" },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('healthy', function () {",
+              "  pm.expect(pm.response.json().data.healthy).to.eql(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reset demo",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/demo/reset",
+        "header": [{ "key": "Authorization", "value": "Bearer {{demoToken}}" }]
+      }
+    },
+    {
+      "name": "List campaigns",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/campaigns" },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('three seeded campaigns', function () {",
+              "  pm.expect(pm.response.json().data.length).to.be.at.least(3);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Run disbursement agent (dry run)",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/disburse",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{demoToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": { "mode": "raw", "raw": "{\"dryRun\": true, \"trigger\": \"postman\"}" }
+      }
+    },
+    {
+      "name": "Ledger",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/ledger" }
+    },
+    {
+      "name": "Agent runs",
+      "request": { "method": "GET", "url": "{{baseUrl}}/api/runs" }
+    }
+  ]
+}

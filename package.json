@@ -3,25 +3,57 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "NODE_OPTIONS=--experimental-require-module next dev",
+    "build": "NODE_OPTIONS=--experimental-require-module next build",
+    "start": "NODE_OPTIONS=--experimental-require-module next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write .",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "seed": "tsx scripts/seed.ts",
+    "disburse": "tsx scripts/disburse.ts",
+    "disburse:dry": "tsx scripts/disburse.ts --dry-run",
+    "disburse:cron": "sh scripts/disburse-cron.sh"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "1.2.12",
+    "@ai-sdk/react": "1.2.12",
+    "@elastic/elasticsearch": "^9.5.1",
+    "@paypal/agent-toolkit": "1.11.0",
+    "ag-grid-community": "^36.2.0",
+    "ag-grid-react": "^36.2.0",
+    "ai": "4.3.19",
+    "drizzle-orm": "^0.45.4",
     "next": "16.4.5",
+    "pino": "^10.4.0",
+    "postgres": "^4.0.0",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "3.25.76"
   },
   "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
+    "@tailwindcss/postcss": "^4.3.4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "3",
+    "dotenv": "^18.0.9",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "pino-pretty": "^13.2.0",
+    "prettier": "^3.9.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "3"
   },
-  "packageManager": "pnpm@9.14.2"
+  "packageManager": "pnpm@9.14.2",
+  "engines": {
+    "node": ">=22.11"
+  }
 }
