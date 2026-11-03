@@ -20,17 +20,17 @@ const UNKNOWN_CLIENT = 'unknown';
 const MAX_TRACKED_KEYS = 10_000;
 /**
  * When the map is full of live windows, a new client is limited together with its network
- * neighbours (IPv4 /24, IPv6 /64) at the normal limit: fail closed, and one flooding network
+ * neighbours (IPv4 /24, IPv6 /48) at the normal limit: fail closed, and one flooding network
  * cannot consume the budget of unrelated networks. The overflow namespace is itself capped;
  * past that cap, and for anything that is not a valid address, one global bucket applies.
  * A shared store would replace this at scale.
  */
 const OVERFLOW_PREFIX = '__net__';
-const GLOBAL_OVERFLOW_KEY = '__net__all';
+const GLOBAL_OVERFLOW_KEY = '__all__';
 const MAX_OVERFLOW_BUCKETS = 1_000;
 const IPV4_PREFIX_OCTETS = 3;
 const IPV6_GROUPS = 8;
-const IPV6_PREFIX_GROUPS = 4;
+const IPV6_PREFIX_GROUPS = 3;
 const IPV4_MAPPED_PREFIX = '::ffff:';
 const IP_V4 = 4;
 const IP_V6 = 6;
@@ -92,6 +92,9 @@ export function createRateLimiter(options: RateLimiterOptions): RateLimiter {
         return;
       }
       windows.delete(k);
+      if (k.startsWith(OVERFLOW_PREFIX)) {
+        overflowBuckets -= 1;
+      }
     }
   }
 
