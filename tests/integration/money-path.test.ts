@@ -17,7 +17,7 @@ describe('money path against postgres', () => {
   let campaignIds: readonly string[] = [];
 
   beforeAll(async () => {
-    const seeded = await resetDemo('sponsor@example.com');
+    const seeded = await resetDemo('sponsor@example.com', { seedDonation: false });
     campaignIds = seeded.campaignIds;
   });
 

@@ -13,6 +13,7 @@ import {
 } from '@/db/schema';
 import { newId } from '@/lib/ids';
 import { ensureCampaignIndex, indexCampaign } from '@/features/search/service';
+import { markCaptured, recordOrder } from '@/features/giving/service';
 
 const SEED_CAMPAIGNS = [
   {
@@ -65,6 +66,13 @@ const SEED_CAMPAIGNS = [
   },
 ] as const;
 
+/** A captured gift seeded on every reset so the disbursement agent always has work. */
+export const SEED_DONATION_CENTS = 10_000;
+const SEED_DONATION_SPLIT_CENTS = [6_000, 4_000] as const;
+const SEED_DONOR_NAME = 'Demo Donor';
+const SEED_ORDER_ID = 'SEED-DEMO-ORDER';
+const SEED_CAPTURE_ID = 'SEED-DEMO-CAPTURE';
+
 const SEED_SPONSOR = {
   name: 'Buckeye Alumni Health Fund',
   cohortTag: 'nursing',
@@ -72,8 +80,16 @@ const SEED_SPONSOR = {
   capCents: 100_000,
 } as const;
 
+export interface ResetDemoOptions {
+  /** Seed one captured gift so the disbursement agent has work. Defaults to true. */
+  readonly seedDonation?: boolean;
+}
+
 /** Wipes all demo state and reseeds. Safe to call any number of times. */
-export async function resetDemo(sponsorEmail: string): Promise<{ campaignIds: readonly string[] }> {
+export async function resetDemo(
+  sponsorEmail: string,
+  options: ResetDemoOptions = {},
+): Promise<{ campaignIds: readonly string[] }> {
   const db = getDb();
   await db.delete(reconciliationExceptions);
   await db.delete(ledgerEntries);
@@ -121,5 +137,23 @@ export async function resetDemo(sponsorEmail: string): Promise<{ campaignIds: re
     ids.push(campaignId);
   }
   await db.insert(sponsors).values({ id: newId('spn'), email: sponsorEmail, ...SEED_SPONSOR });
+  if (options.seedDonation ?? true) {
+    await seedCapturedDonation(ids);
+  }
   return { campaignIds: ids };
+}
+
+async function seedCapturedDonation(campaignIds: readonly string[]): Promise<void> {
+  const split = SEED_DONATION_SPLIT_CENTS.map((cents, i) => ({
+    campaignId: campaignIds[i],
+    cents,
+    reason: 'seeded demo gift',
+  }));
+  await recordOrder({
+    paypalOrderId: SEED_ORDER_ID,
+    donorName: SEED_DONOR_NAME,
+    totalCents: SEED_DONATION_CENTS,
+    split,
+  });
+  await markCaptured(SEED_ORDER_ID, SEED_CAPTURE_ID);
 }
