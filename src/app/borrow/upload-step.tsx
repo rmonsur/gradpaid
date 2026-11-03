@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Button, Card } from '@/components/ui';
-import { Field, TextInput, TextArea, Select, ErrorBanner } from './form-fields';
+import { Field, TextInput, TextArea, Select, ErrorBanner } from './fields';
 import { US_STATES } from './us-states';
 import {
   uploadSchema,
@@ -154,7 +154,7 @@ export function UploadStep({ onComplete }: UploadStepProps): React.ReactElement 
         {submitError ? <ErrorBanner message={submitError} /> : null}
         {busy ? (
           <div
-            className="flex items-center gap-3 rounded-lg bg-accent-soft/60 px-4 py-3 text-sm text-accent-strong"
+            className="flex items-center gap-3 rounded-[var(--radius-control)] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-foreground"
             role="status"
           >
             <span className="h-2 w-2 animate-pulse-dot rounded-full bg-accent" aria-hidden />

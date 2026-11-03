@@ -77,7 +77,7 @@ export function RunsSection({
     <div className="flex flex-col gap-4">
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Recent agent runs</h2>
+          <h2 className="label text-foreground">Recent agent runs</h2>
           <Button variant="ghost" onClick={load}>
             Refresh
           </Button>
@@ -90,10 +90,10 @@ export function RunsSection({
               <button
                 type="button"
                 onClick={() => setSelectedId(r.id === selectedId ? null : r.id)}
-                className={`flex w-full flex-wrap items-center gap-3 py-2.5 text-left text-sm hover:bg-accent-soft/40 ${r.id === selectedId ? 'bg-accent-soft/60' : ''}`}
+                className={`flex w-full flex-wrap items-center gap-3 px-2 py-2.5 text-left text-sm transition-colors duration-150 hover:bg-surface-raised ${r.id === selectedId ? 'bg-surface-raised' : ''}`}
               >
                 <Badge tone={STATUS_TONES[r.status]}>{r.status}</Badge>
-                <span className="font-medium">{r.agent}</span>
+                <span className="text-foreground">{r.agent}</span>
                 <span className="text-muted">via {r.trigger}</span>
                 <span className="ml-auto text-xs text-muted">{formatWhen(r.startedAt)}</span>
                 {r.summary ? (

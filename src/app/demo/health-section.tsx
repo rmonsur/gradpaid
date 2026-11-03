@@ -61,12 +61,10 @@ export function HealthSection(): React.ReactElement {
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">System health</h2>
+        <h2 className="label text-foreground">System health</h2>
         <div className="flex items-center gap-3">
           {state.status === 'ready' ? (
-            <span
-              className={`text-xs font-medium ${state.payload.healthy ? 'text-success' : 'text-danger'}`}
-            >
+            <span className={`label ${state.payload.healthy ? 'text-accent' : 'text-danger'}`}>
               {state.payload.healthy ? 'All systems go' : 'Attention needed'}
             </span>
           ) : null}
@@ -85,7 +83,7 @@ export function HealthSection(): React.ReactElement {
                 className={`h-2.5 w-2.5 shrink-0 rounded-full ${c.ok ? 'bg-success' : 'bg-danger'}`}
                 aria-hidden
               />
-              <span className="w-36 font-medium">{CHECK_LABELS[c.name] ?? c.name}</span>
+              <span className="w-36 text-foreground">{CHECK_LABELS[c.name] ?? c.name}</span>
               <span className="truncate text-muted">{c.detail}</span>
             </li>
           ))}

@@ -17,13 +17,22 @@ import { Badge, Card, Stat } from '@/components/ui';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+/** Theme reads the DESIGN.md tokens from CSS variables so the grid never carries its own hex. */
 const GRID_THEME = themeQuartz.withParams({
-  accentColor: '#0070ba',
-  borderColor: '#e2e8f0',
-  headerBackgroundColor: '#f7f8fa',
+  accentColor: 'var(--accent)',
+  backgroundColor: 'var(--surface)',
+  foregroundColor: 'var(--foreground)',
+  borderColor: 'var(--border)',
+  headerBackgroundColor: 'var(--background)',
+  headerTextColor: 'var(--muted)',
+  oddRowBackgroundColor: 'var(--surface)',
+  rowHoverColor: 'var(--surface-raised)',
+  chromeBackgroundColor: 'var(--background)',
   fontFamily: 'inherit',
   fontSize: 13,
   rowHeight: 40,
+  wrapperBorderRadius: 15,
+  browserColorScheme: 'dark',
 });
 
 const GRID_HEIGHT_PX = 560;
@@ -166,9 +175,9 @@ export function LedgerGrid(): React.ReactElement {
           onChange={(e) => setQuickFilter(e.target.value)}
           placeholder="Search any column"
           aria-label="Search ledger"
-          className="w-full max-w-sm rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+          className="w-full max-w-sm rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 font-mono text-sm outline-none placeholder:text-muted focus:border-accent"
         />
-        <span className="text-sm text-muted">{rows.length} entries</span>
+        <span className="label">{rows.length} entries</span>
       </div>
 
       {state.status === 'error' ? (
@@ -183,7 +192,7 @@ export function LedgerGrid(): React.ReactElement {
 
       <div
         style={{ height: GRID_HEIGHT_PX }}
-        className="overflow-hidden rounded-xl border border-border"
+        className="overflow-hidden rounded-[var(--radius-card)] border border-border"
       >
         <AgGridReact<LedgerEntry>
           theme={GRID_THEME}

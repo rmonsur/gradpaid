@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Stepper } from './form-fields';
+import { Stepper } from './fields';
 import { UploadStep } from './upload-step';
 import { ReviewStep } from './review-step';
 import { PublishStep } from './publish-step';

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from './ui';
+import { Button } from '@/components/ui';
 
 const SDK_URL = 'https://www.sandbox.paypal.com/web-sdk/v6/core';
 const SDK_SCRIPT_ID = 'paypal-web-sdk-v6';
@@ -145,8 +145,8 @@ export function PayPalButton({
 
   if (phase.kind === 'captured') {
     return (
-      <div className="space-y-2 rounded-lg bg-success-soft p-4 text-sm text-success">
-        <div className="font-semibold">Donation captured.</div>
+      <div className="space-y-2 rounded-[var(--radius-control)] border border-accent/40 bg-success-soft p-4 text-sm text-foreground">
+        <div className="label text-accent">Donation captured</div>
         <div>
           PayPal capture <code className="font-mono">{phase.captureId}</code>. The disbursement
           agent will pay the servicer on its next run.
@@ -159,8 +159,8 @@ export function PayPalButton({
   }
   if (phase.kind === 'error') {
     return (
-      <div className="space-y-2 rounded-lg bg-danger-soft p-4 text-sm text-danger">
-        <div className="font-semibold">PayPal checkout could not start.</div>
+      <div className="space-y-2 rounded-[var(--radius-control)] border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
+        <div className="label text-danger">PayPal checkout could not start</div>
         <div>{phase.message}</div>
       </div>
     );
@@ -174,8 +174,8 @@ export function PayPalButton({
             ? 'Completing with PayPal'
             : `Pay ${amountLabel} with PayPal`}
       </Button>
-      <p className="text-center text-xs text-muted">
-        Sandbox order <code className="font-mono">{orderId}</code>
+      <p className="label text-center normal-case tracking-normal">
+        Sandbox order <code className="font-mono text-foreground">{orderId}</code>
       </p>
     </div>
   );

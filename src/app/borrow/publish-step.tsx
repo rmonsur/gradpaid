@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button, Card, Badge } from '@/components/ui';
 import { formatUsd, toCents } from '@/lib/money';
-import { ErrorBanner } from './form-fields';
+import { ErrorBanner } from './fields';
 import {
   parseTags,
   type ApiEnvelope,
@@ -82,19 +82,19 @@ export function PublishStep({
         <p className="mt-1 text-sm text-muted">
           Campaign id <code className="font-mono">{created.id}</code>
         </p>
-        <p className="mt-4 rounded-lg bg-accent-soft/60 px-4 py-3 text-sm font-medium text-accent-strong">
+        <p className="mt-4 rounded-[var(--radius-control)] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-foreground">
           Donations are paid to your servicer. You never receive funds.
         </p>
         <div className="mt-5 flex gap-3">
           <Link
             href="/give"
-            className="inline-flex items-center rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent"
+            className="inline-flex items-center rounded-[var(--radius-control)] bg-accent px-5 py-3 font-mono text-sm font-semibold text-background transition-colors duration-150 hover:bg-accent-strong"
           >
             See the giving page
           </Link>
           <Link
             href="/ledger"
-            className="inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-accent-soft"
+            className="inline-flex items-center rounded-[var(--radius-control)] border border-border px-5 py-3 font-mono text-sm font-semibold transition-colors duration-150 hover:border-border-strong hover:bg-surface-raised"
           >
             Open the ledger
           </Link>
@@ -122,7 +122,7 @@ export function PublishStep({
         ))}
       </div>
       <p className="mt-4 whitespace-pre-line text-sm text-muted">{review.story}</p>
-      <p className="mt-4 rounded-lg bg-accent-soft/60 px-4 py-3 text-sm font-medium text-accent-strong">
+      <p className="mt-4 rounded-[var(--radius-control)] border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-foreground">
         Donations are paid to your servicer. You never receive funds.
       </p>
       {error ? (

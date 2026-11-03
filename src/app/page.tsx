@@ -1,32 +1,35 @@
 import Link from 'next/link';
-import { APP_NAME, APP_TAGLINE } from '@/lib/constants';
+import { APP_NAME } from '@/lib/constants';
 import { listActiveCampaigns, type CampaignSummary } from '@/features/campaigns/service';
 import { formatUsd } from '@/lib/money';
-import { Badge, Card, ProgressBar } from '@/components/ui';
+import { Badge, Card, LinkButton, ProgressBar, Stat } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 
 const STEPS = [
   {
-    title: 'A graduate verifies a statement',
-    body: 'The intake agent reads a real loan statement and drafts a campaign. The borrower approves it. No account numbers are ever shown.',
+    index: '01/',
+    title: 'Intake',
+    body: 'The intake agent reads a real loan statement, extracts the balance and servicer, and drafts a campaign the borrower approves. Account numbers never leave the server.',
   },
   {
-    title: 'A donor gives once with PayPal',
-    body: 'Tell the giving agent who you want to help. It finds verified campaigns, proposes a split, and creates one PayPal order.',
+    index: '02/',
+    title: 'Routing',
+    body: 'A donor tells the giving agent who to help. It searches verified campaigns, proposes a split, and creates one PayPal order through the Agent Toolkit.',
   },
   {
-    title: 'The agent pays the servicer',
-    body: 'The disbursement agent sends payouts to the loan servicer, invoices matching sponsors, and reconciles every cent against PayPal.',
+    index: '03/',
+    title: 'Disbursement',
+    body: 'The disbursement agent pays each loan servicer by PayPal Payout, invoices matching sponsors, and reconciles every cent against PayPal transaction search.',
   },
 ] as const;
 
 const PAYPAL_PRODUCTS = [
-  'PayPal Agent Toolkit',
+  'Agent Toolkit',
   'Orders',
-  'Invoicing',
   'Payouts',
-  'Reporting',
+  'Invoicing',
+  'Transaction Search',
 ] as const;
 const SPONSORS = ['Elastic', 'AG Grid', 'Render', 'Postman'] as const;
 
@@ -38,98 +41,113 @@ async function loadCampaigns(): Promise<readonly CampaignSummary[] | null> {
   }
 }
 
-function CampaignCard({ c }: { c: CampaignSummary }): React.ReactElement {
+function sumBy(
+  campaigns: readonly CampaignSummary[],
+  pick: (c: CampaignSummary) => number,
+): number {
+  return campaigns.reduce((total, c) => total + pick(c), 0);
+}
+
+function CampaignCard({ campaign }: { campaign: CampaignSummary }): React.ReactElement {
   return (
-    <Card className="flex flex-col gap-3">
+    <Card as="article" className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-1.5">
-        {c.cohortTags.map((t) => (
+        {campaign.cohortTags.map((t) => (
           <Badge key={t} tone="accent">
             {t}
           </Badge>
         ))}
       </div>
-      <h3 className="text-lg font-semibold leading-snug">{c.title}</h3>
-      <p className="text-sm text-muted">
-        {c.school} · {c.fieldOfStudy} · {c.state}
+      <h3 className="display text-xl normal-case">{campaign.title}</h3>
+      <p className="text-xs text-muted">
+        {campaign.school} / {campaign.fieldOfStudy} / {campaign.state}
       </p>
-      <p className="line-clamp-3 text-sm">{c.story}</p>
+      <p className="line-clamp-3 text-sm text-muted">{campaign.story}</p>
       <div className="mt-auto space-y-2">
-        <ProgressBar value={c.raisedCents} max={c.goalCents} />
-        <div className="flex justify-between text-xs text-muted">
-          <span>{formatUsd(c.raisedCents)} raised</span>
-          <span>{formatUsd(c.goalCents)} goal</span>
+        <ProgressBar value={campaign.raisedCents} max={campaign.goalCents} />
+        <div className="flex justify-between text-xs">
+          <span className="text-accent">{formatUsd(campaign.raisedCents)} raised</span>
+          <span className="text-muted">{formatUsd(campaign.goalCents)} goal</span>
         </div>
-        <p className="text-xs text-muted">Paid to {c.servicerName}, never to the borrower.</p>
+        <p className="label normal-case tracking-normal">
+          Paid to {campaign.servicerName}. Never to the borrower.
+        </p>
       </div>
-      <Link href="/give" className="text-sm font-medium text-accent-strong hover:underline">
+      <Link href="/give" className="text-sm text-accent hover:underline">
         Give toward this loan
       </Link>
     </Card>
   );
 }
 
+function Hero({ campaigns }: { campaigns: readonly CampaignSummary[] }): React.ReactElement {
+  const raised = sumBy(campaigns, (c) => c.raisedCents);
+  const paid = sumBy(campaigns, (c) => c.disbursedCents);
+  const remaining = sumBy(campaigns, (c) => c.remainingCents);
+  return (
+    <section className="relative overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface">
+      <div className="dot-grid pointer-events-none absolute inset-0" aria-hidden />
+      <div className="relative grid gap-10 p-6 md:grid-cols-[1.3fr_1fr] md:p-12">
+        <div className="space-y-6">
+          <Badge tone="accent" live>
+            Agents online. PayPal sandbox.
+          </Badge>
+          <h1 className="display text-5xl md:text-7xl">
+            The loan
+            <br />
+            gets paid.
+          </h1>
+          <p className="max-w-xl text-muted">
+            Give once. An agent splits the gift, pays the loan servicer by PayPal, and writes every
+            cent to a public ledger. The borrower never touches the money.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <LinkButton href="/give">Give toward a loan</LinkButton>
+            <LinkButton href="/borrow" variant="secondary">
+              I am a borrower
+            </LinkButton>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border">
+          <div className="bg-surface p-5">
+            <Stat label="Raised" value={formatUsd(raised)} accent />
+          </div>
+          <div className="bg-surface p-5">
+            <Stat label="Paid to servicers" value={formatUsd(paid)} />
+          </div>
+          <div className="bg-surface p-5">
+            <Stat label="Still owed on goals" value={formatUsd(remaining)} />
+          </div>
+          <div className="bg-surface p-5">
+            <Stat label="Verified campaigns" value={String(campaigns.length)} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default async function Home(): Promise<React.ReactElement> {
   const campaigns = await loadCampaigns();
   return (
-    <div className="space-y-16">
-      <section className="grid items-center gap-10 md:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-6">
-          <Badge tone="accent">Built on the PayPal Agent Toolkit</Badge>
-          <h1 className="text-5xl font-semibold leading-tight tracking-tight">{APP_TAGLINE}</h1>
-          <p className="max-w-xl text-lg text-muted">
-            Forty-three million Americans carry student debt, and the people around them want to
-            help. Cash gifts get diverted, crowdfunding pays the borrower instead of the lender, and
-            nobody reconciles anything. {APP_NAME} is crowd-repayment where an AI agent routes every
-            dollar straight to the loan servicer.
-          </p>
-          <div className="flex gap-3">
-            <Link
-              href="/give"
-              className="rounded-lg bg-accent-strong px-5 py-2.5 text-sm font-medium text-white transition hover:bg-accent"
-            >
-              Give toward a loan
-            </Link>
-            <Link
-              href="/borrow"
-              className="rounded-lg border border-border bg-surface px-5 py-2.5 text-sm font-medium transition hover:bg-accent-soft"
-            >
-              I am a borrower
-            </Link>
-          </div>
-        </div>
-        <Card className="space-y-4 bg-accent-strong text-white">
-          <div className="text-xs font-medium uppercase tracking-wide text-white/70">The rule</div>
-          <p className="text-2xl font-semibold leading-snug">
-            The money never touches the borrower.
-          </p>
-          <p className="text-sm text-white/80">
-            Donations are captured by PayPal, held by the platform, and paid out by an agent
-            directly to the servicer with the loan reference attached. Every step is on the public
-            ledger.
-          </p>
-        </Card>
-      </section>
+    <div className="space-y-20">
+      <Hero campaigns={campaigns ?? []} />
 
-      <section>
-        <h2 className="mb-6 text-2xl font-semibold tracking-tight">How it works</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <Card key={s.title} className="space-y-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-soft font-mono text-sm font-semibold text-accent-strong">
-                {i + 1}
-              </div>
-              <h3 className="font-semibold">{s.title}</h3>
+      <section className="space-y-6">
+        <div className="label">How it works</div>
+        <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border md:grid-cols-3">
+          {STEPS.map((s) => (
+            <div key={s.index} className="bg-surface p-6">
+              <div className="label mb-4">{s.index}</div>
+              <h3 className="display mb-3 text-xl normal-case">{s.title}</h3>
               <p className="text-sm text-muted">{s.body}</p>
-            </Card>
+            </div>
           ))}
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
-            Built on PayPal
-          </div>
+        <Card index="Built on PayPal">
           <div className="flex flex-wrap gap-2">
             {PAYPAL_PRODUCTS.map((p) => (
               <Badge key={p} tone="accent">
@@ -137,31 +155,31 @@ export default async function Home(): Promise<React.ReactElement> {
               </Badge>
             ))}
           </div>
-          <p className="mt-3 text-sm text-muted">
-            Every PayPal action is a function-calling tool from the Agent Toolkit, executed by an
-            agent and shown on screen as it happens.
+          <p className="mt-4 text-sm text-muted">
+            Every PayPal action is a function-calling tool from the PayPal Agent Toolkit, chosen by
+            an agent and shown on screen as it happens.
           </p>
         </Card>
-        <Card>
-          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted">
-            Powered by
-          </div>
+        <Card index="Powered by">
           <div className="flex flex-wrap gap-2">
             {SPONSORS.map((s) => (
               <Badge key={s}>{s}</Badge>
             ))}
           </div>
-          <p className="mt-3 text-sm text-muted">
+          <p className="mt-4 text-sm text-muted">
             Elastic matches donor intent to campaigns, AG Grid renders the public ledger, Render
             hosts the app and the agent schedule, Postman monitors health.
           </p>
         </Card>
       </section>
 
-      <section>
-        <div className="mb-6 flex items-end justify-between">
-          <h2 className="text-2xl font-semibold tracking-tight">Verified campaigns</h2>
-          <Link href="/give" className="text-sm font-medium text-accent-strong hover:underline">
+      <section className="space-y-6">
+        <div className="flex items-end justify-between">
+          <div className="space-y-2">
+            <div className="label">Verified campaigns</div>
+            <h2 className="display text-3xl">Who {APP_NAME} is paying for.</h2>
+          </div>
+          <Link href="/give" className="text-sm text-accent hover:underline">
             Ask the giving agent
           </Link>
         </div>
@@ -176,7 +194,7 @@ export default async function Home(): Promise<React.ReactElement> {
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             {campaigns.map((c) => (
-              <CampaignCard key={c.id} c={c} />
+              <CampaignCard key={c.id} campaign={c} />
             ))}
           </div>
         )}

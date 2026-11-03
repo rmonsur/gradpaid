@@ -82,8 +82,10 @@ function MessageBubble({ m }: { m: UIMessage }): React.ReactElement | null {
   return (
     <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
-          mine ? 'bg-accent-strong text-white' : 'bg-accent-soft text-foreground'
+        className={`max-w-[85%] whitespace-pre-wrap rounded-[var(--radius-card)] border px-4 py-3 text-sm ${
+          mine
+            ? 'border-accent/40 bg-accent-soft text-foreground'
+            : 'border-border bg-background text-foreground'
         }`}
       >
         {text}
@@ -119,13 +121,13 @@ export function GiveClient(): React.ReactElement {
   return (
     <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
       <Card className="flex min-h-[560px] flex-col gap-4">
-        <label className="flex items-center gap-2 text-xs text-muted">
+        <label className="label flex items-center gap-3">
           Your name
           <input
             value={donorName}
             onChange={(e) => setDonorName(e.target.value)}
             maxLength={80}
-            className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
+            className="rounded-[var(--radius-control)] border border-border bg-background px-3 py-1.5 font-mono text-sm normal-case tracking-normal text-foreground outline-none focus:border-accent"
           />
         </label>
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
@@ -144,9 +146,16 @@ export function GiveClient(): React.ReactElement {
           {messages.map((m) => (
             <MessageBubble key={m.id} m={m} />
           ))}
-          {busy ? <div className="text-xs text-muted">The agent is working</div> : null}
+          {busy ? (
+            <div className="label flex items-center gap-2">
+              <span className="animate-pulse-dot h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+              Agent working
+            </div>
+          ) : null}
           {error ? (
-            <div className="rounded-md bg-danger-soft p-3 text-sm text-danger">{error.message}</div>
+            <div className="rounded-[var(--radius-control)] border border-danger/40 bg-danger-soft p-3 text-sm text-danger">
+              {error.message}
+            </div>
           ) : null}
         </div>
         <form onSubmit={onSubmit} className="flex gap-2">
@@ -154,7 +163,7 @@ export function GiveClient(): React.ReactElement {
             value={input}
             onChange={handleInputChange}
             placeholder="Who do you want to help, and how much?"
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            className="flex-1 rounded-[var(--radius-control)] border border-border bg-background px-4 py-3 font-mono text-sm outline-none placeholder:text-muted focus:border-accent"
           />
           <Button type="submit" disabled={busy || input.trim().length === 0}>
             Send
@@ -166,10 +175,10 @@ export function GiveClient(): React.ReactElement {
         {pending ? (
           <Card className="space-y-3">
             <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-muted">
-                Ready to pay
+              <div className="label">Ready to pay</div>
+              <div className="display mt-2 text-3xl normal-case text-accent">
+                {formatUsd(pending.totalCents)}
               </div>
-              <div className="text-2xl font-semibold">{formatUsd(pending.totalCents)}</div>
               <p className="text-sm text-muted">
                 Captured by PayPal, then paid to the servicer by the disbursement agent.
               </p>

@@ -75,8 +75,8 @@ export function ConsoleClient(): React.ReactElement {
         <HealthSection />
 
         <Card>
-          <h2 className="mb-3 text-sm font-semibold">Demo controls</h2>
-          <label className="block text-xs font-medium text-muted" htmlFor="demo-token">
+          <h2 className="label mb-4 text-foreground">Demo controls</h2>
+          <label className="label block" htmlFor="demo-token">
             Demo token
           </label>
           <input
@@ -85,7 +85,7 @@ export function ConsoleClient(): React.ReactElement {
             value={token}
             onChange={(e) => setToken(e.target.value)}
             autoComplete="off"
-            className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+            className="mt-2 w-full rounded-[var(--radius-control)] border border-border bg-background px-4 py-3 font-mono text-sm outline-none focus:border-accent"
           />
           <p className="mt-1 text-xs text-muted">Found on the demo page in the README.</p>
 
@@ -120,7 +120,7 @@ export function ConsoleClient(): React.ReactElement {
                 {disburse.status === 'running' ? (
                   <>
                     <span
-                      className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                      className="h-3 w-3 animate-spin rounded-full border-2 border-background/40 border-t-background"
                       aria-hidden
                     />
                     Agent running
@@ -150,10 +150,10 @@ export function ConsoleClient(): React.ReactElement {
       <div className="flex flex-col gap-4">
         {disburse.status === 'done' ? (
           <Card>
-            <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">
+            <div className="label mb-3">
               Run {disburse.result.runId} {disburse.result.dryRun ? '(dry run)' : ''}
             </div>
-            <p className="text-sm">{disburse.result.summary}</p>
+            <p className="text-sm text-muted">{disburse.result.summary}</p>
           </Card>
         ) : null}
         <ActivityPanel

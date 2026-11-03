@@ -27,12 +27,12 @@ The borrower never receives funds. The donor sees exactly which payment their gi
 
 ## 3. Who it is for
 
-| Actor | What they do | What they get |
-|---|---|---|
-| Borrower | Uploads a loan statement, approves the generated campaign | A verified campaign page and a lower balance, with no cash handling |
-| Donor | Describes who they want to help in plain language, pays once with PayPal | A split donation across matched borrowers and a receipt tied to a real servicer payment |
-| Matching sponsor | Pledges a match ratio for a cohort, such as an employer or alumni association | Automatic invoicing only when donations trigger the match, with a clean audit trail |
-| Servicer | Receives payouts referenced to a loan account | Modeled as a PayPal business account in sandbox for the demo |
+| Actor            | What they do                                                                  | What they get                                                                           |
+| ---------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Borrower         | Uploads a loan statement, approves the generated campaign                     | A verified campaign page and a lower balance, with no cash handling                     |
+| Donor            | Describes who they want to help in plain language, pays once with PayPal      | A split donation across matched borrowers and a receipt tied to a real servicer payment |
+| Matching sponsor | Pledges a match ratio for a cohort, such as an employer or alumni association | Automatic invoicing only when donations trigger the match, with a clean audit trail     |
+| Servicer         | Receives payouts referenced to a loan account                                 | Modeled as a PayPal business account in sandbox for the demo                            |
 
 ## 4. How it works
 
@@ -75,27 +75,27 @@ The hackathon has no tracks. The single requirement is that the project meaningf
 
 PayPal products used, all in sandbox:
 
-| Product | Role in GradPaid |
-|---|---|
-| Orders and Checkout (JS SDK v6) | Donor payment |
-| Invoicing | Billing matching sponsors |
-| Payouts | Paying servicers |
-| Reporting | Reconciliation of orders, invoices, and payouts |
-| Payments and Refunds | Refunding donations on failed verification |
-| Agent Toolkit | The function-calling layer every agent uses to touch PayPal |
-| MCP server | Used in the development workflow and shown in the demo video |
+| Product                         | Role in GradPaid                                             |
+| ------------------------------- | ------------------------------------------------------------ |
+| Orders and Checkout (JS SDK v6) | Donor payment                                                |
+| Invoicing                       | Billing matching sponsors                                    |
+| Payouts                         | Paying servicers                                             |
+| Reporting                       | Reconciliation of orders, invoices, and payouts              |
+| Payments and Refunds            | Refunding donations on failed verification                   |
+| Agent Toolkit                   | The function-calling layer every agent uses to touch PayPal  |
+| MCP server                      | Used in the development workflow and shown in the demo video |
 
 ## 6. Judging criteria mapping
 
 Judging is a pass/fail viability screen followed by five equally weighted criteria. Ties are broken in the order listed.
 
-| Criterion | How GradPaid answers it |
-|---|---|
-| Technological Implementation | Five PayPal products driven through the Agent Toolkit by one autonomous agent, plus a custom Payouts tool that shows the toolkit is extensible. Live tool-call panel proves it is real. |
-| Design | A complete product with three roles, not a proof of concept. Calm fintech visual language, a campaign card that reads like a scholarship profile, and the agent panel as the hero screen. |
-| Potential Impact | A specific audience, a specific failure in the existing options, and a mechanism that structurally prevents diversion. Employer and alumni matching extends the model beyond individual donors. |
-| Innovation and Idea | Donations become servicer payments executed by an agent. Sponsor matching is invoiced automatically. The ledger reconciles against PayPal records rather than a self-reported database. |
-| Presentation | A three-minute video that shows the full loop end to end, with every PayPal call on screen. |
+| Criterion                    | How GradPaid answers it                                                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Technological Implementation | Five PayPal products driven through the Agent Toolkit by one autonomous agent, plus a custom Payouts tool that shows the toolkit is extensible. Live tool-call panel proves it is real.         |
+| Design                       | A complete product with three roles, not a proof of concept. Calm fintech visual language, a campaign card that reads like a scholarship profile, and the agent panel as the hero screen.       |
+| Potential Impact             | A specific audience, a specific failure in the existing options, and a mechanism that structurally prevents diversion. Employer and alumni matching extends the model beyond individual donors. |
+| Innovation and Idea          | Donations become servicer payments executed by an agent. Sponsor matching is invoiced automatically. The ledger reconciles against PayPal records rather than a self-reported database.         |
+| Presentation                 | A three-minute video that shows the full loop end to end, with every PayPal call on screen.                                                                                                     |
 
 Target prizes: Grand Prize, Best Use of Agentic Commerce, Best Use of PayPal + AI, Most Impactful, Best Use of AG Grid, Best Use of Render.
 
@@ -103,14 +103,14 @@ Target prizes: Grand Prize, Best Use of Agentic Commerce, Best Use of PayPal + A
 
 Under three minutes, public on YouTube, no third-party music or trademarks beyond the tools used.
 
-| Time | Beat |
-|---|---|
-| 0:00 to 0:20 | The problem, ending on "the money never touches the borrower" |
-| 0:20 to 0:50 | Borrower uploads a statement, agent builds the campaign |
-| 0:50 to 1:30 | Donor chats, agent proposes a split, one PayPal checkout |
+| Time         | Beat                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0:00 to 0:20 | The problem, ending on "the money never touches the borrower"                                                                                       |
+| 0:20 to 0:50 | Borrower uploads a statement, agent builds the campaign                                                                                             |
+| 0:50 to 1:30 | Donor chats, agent proposes a split, one PayPal checkout                                                                                            |
 | 1:30 to 2:20 | Disbursement agent runs on screen: order confirmed, servicer paid, sponsor invoiced, ledger reconciled, each as a visible PayPal Agent Toolkit call |
-| 2:20 to 2:40 | Public ledger in AG Grid and the impact math |
-| 2:40 to 3:00 | Stack slide: PayPal Agent Toolkit, MCP server, Elastic, AG Grid, Render, Postman |
+| 2:20 to 2:40 | Public ledger in AG Grid and the impact math                                                                                                        |
+| 2:40 to 3:00 | Stack slide: PayPal Agent Toolkit, MCP server, Elastic, AG Grid, Render, Postman                                                                    |
 
 ## 8. Reliability commitments for judges
 
@@ -143,15 +143,15 @@ Judges test between December 1 and December 15 without the team present. The pro
 
 ## 11. Nine-day build plan
 
-| Date | Milestone |
-|---|---|
-| Nov 4 | Sandbox accounts, Agent Toolkit wired into the agent runtime, donor checkout end to end on Render |
-| Nov 5 to 6 | Statement intake, Elastic campaign search, giving agent with split checkout |
-| Nov 7 | Disbursement agent, custom Payouts tool, sponsor invoicing, AG Grid ledger |
-| Nov 8 to 9 | Design polish, agent activity panel, reset and health endpoints, Postman collection |
-| Nov 10 | Video and write-up |
-| Nov 11 | Clean-machine judge run, fixes, submit |
-| Nov 12 | Buffer only. Deadline is 12:00 pm PT |
+| Date       | Milestone                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------- |
+| Nov 4      | Sandbox accounts, Agent Toolkit wired into the agent runtime, donor checkout end to end on Render |
+| Nov 5 to 6 | Statement intake, Elastic campaign search, giving agent with split checkout                       |
+| Nov 7      | Disbursement agent, custom Payouts tool, sponsor invoicing, AG Grid ledger                        |
+| Nov 8 to 9 | Design polish, agent activity panel, reset and health endpoints, Postman collection               |
+| Nov 10     | Video and write-up                                                                                |
+| Nov 11     | Clean-machine judge run, fixes, submit                                                            |
+| Nov 12     | Buffer only. Deadline is 12:00 pm PT                                                              |
 
 ## 12. Open questions
 

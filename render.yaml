@@ -3,7 +3,7 @@ services:
     name: gradpaid
     runtime: node
     plan: starter
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm build
+    buildCommand: npm install -g pnpm@9.14.2 && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm build
     startCommand: pnpm start
     healthCheckPath: /api/health
     envVars:
@@ -42,7 +42,7 @@ services:
     name: gradpaid-disbursement
     runtime: node
     schedule: '0 */6 * * *'
-    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    buildCommand: npm install -g pnpm@9.14.2 && pnpm install --frozen-lockfile
     startCommand: pnpm disburse:cron
     envVars:
       - key: NODE_VERSION

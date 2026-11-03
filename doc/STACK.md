@@ -6,21 +6,21 @@ This document describes every layer of the system, why each choice was made, and
 
 ## 1. Stack at a glance
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Web application | Next.js App Router, TypeScript strict, Tailwind CSS, shadcn/ui | Fast to make polished, server components plus streaming, one deployable unit |
-| Agent runtime | Vercel AI SDK with `@paypal/agent-toolkit` | PayPal's officially supported pairing. Streams tool calls to the UI natively |
-| Language models | Claude Sonnet 5.5 for agents, Claude Opus 5.5 for statement extraction | Strong tool use, vision for uploaded statements |
-| PayPal | Orders, Invoicing, Payouts, Reporting, Refunds, JS SDK v6, Webhooks, Agent Toolkit, MCP server | The core requirement of the hackathon and the center of the product |
-| Search | Elastic Cloud Serverless, hybrid vector and keyword | Donor intent to campaign matching. Sponsor tool |
-| Ledger UI | AG Grid | Public transparency ledger with grouping and filtering. Sponsor tool |
-| Database | Postgres on Render with Drizzle ORM | Managed, co-located with the app, typed schema |
-| Hosting | Render web service plus Render cron job | Public URL for webhooks, scheduled agent runs. Sponsor tool |
-| Validation | Zod | Schema validation at every boundary and for every tool input |
-| Judge tooling | Postman collection and monitor | Health checks and a one-click demo reset. Sponsor tool |
-| Notifications | Zapier (optional, stretch) | Milestone emails. Sponsor tool |
-| Logging | Pino structured logs | No console output in committed code |
-| Testing | Vitest, Playwright | Unit and integration on agents and tools, one end-to-end judge path |
+| Layer           | Choice                                                                                         | Reason                                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Web application | Next.js App Router, TypeScript strict, Tailwind CSS, shadcn/ui                                 | Fast to make polished, server components plus streaming, one deployable unit |
+| Agent runtime   | Vercel AI SDK with `@paypal/agent-toolkit`                                                     | PayPal's officially supported pairing. Streams tool calls to the UI natively |
+| Language models | Claude Sonnet 5.5 for agents, Claude Opus 5.5 for statement extraction                         | Strong tool use, vision for uploaded statements                              |
+| PayPal          | Orders, Invoicing, Payouts, Reporting, Refunds, JS SDK v6, Webhooks, Agent Toolkit, MCP server | The core requirement of the hackathon and the center of the product          |
+| Search          | Elastic Cloud Serverless, hybrid vector and keyword                                            | Donor intent to campaign matching. Sponsor tool                              |
+| Ledger UI       | AG Grid                                                                                        | Public transparency ledger with grouping and filtering. Sponsor tool         |
+| Database        | Postgres on Render with Drizzle ORM                                                            | Managed, co-located with the app, typed schema                               |
+| Hosting         | Render web service plus Render cron job                                                        | Public URL for webhooks, scheduled agent runs. Sponsor tool                  |
+| Validation      | Zod                                                                                            | Schema validation at every boundary and for every tool input                 |
+| Judge tooling   | Postman collection and monitor                                                                 | Health checks and a one-click demo reset. Sponsor tool                       |
+| Notifications   | Zapier (optional, stretch)                                                                     | Milestone emails. Sponsor tool                                               |
+| Logging         | Pino structured logs                                                                           | No console output in committed code                                          |
+| Testing         | Vitest, Playwright                                                                             | Unit and integration on agents and tools, one end-to-end judge path          |
 
 Sponsor tools deliberately excluded: Bryntum, Channel3, APIMatic, KERNEL, Astropods. Each would be decorative here. Four sponsor tools with a real job beat eight used shallowly.
 
@@ -58,26 +58,26 @@ Three agents share one runtime and one tool registry, but each has its own syste
 
 All accounts are created in the PayPal Developer Dashboard sandbox. None of these are real money.
 
-| Account | Type | Role |
-|---|---|---|
+| Account  | Type     | Role                                                                                 |
+| -------- | -------- | ------------------------------------------------------------------------------------ |
 | Platform | Business | Receives donor orders, sends payouts, issues invoices. Owns the REST app credentials |
-| Servicer | Business | Receives payouts. Stands in for a loan servicer |
-| Sponsor | Business | Receives and pays matching invoices |
-| Donor | Personal | Funded buyer account for judges to use at checkout |
+| Servicer | Business | Receives payouts. Stands in for a loan servicer                                      |
+| Sponsor  | Business | Receives and pays matching invoices                                                  |
+| Donor    | Personal | Funded buyer account for judges to use at checkout                                   |
 
 Credentials for the donor account are published in the README and on the demo page. Platform client ID and secret live only in Render environment variables.
 
 ### 3.2 Products and how each is reached
 
-| Product | Reached through | Used by |
-|---|---|---|
-| Orders: create, get, capture | Agent Toolkit `create_order`, `get_order`, `pay_order` plus JS SDK v6 buttons for the approval step | Giving agent, checkout page |
-| Invoicing: create, send, get | Agent Toolkit `create_invoice`, `send_invoice`, `get_invoice` | Disbursement agent |
-| Payouts | Custom tool wrapping the Payouts REST API, registered next to toolkit tools | Disbursement agent |
-| Reporting: list transactions | Agent Toolkit `list_transactions` | Disbursement agent, reconciliation |
-| Refunds | Agent Toolkit `create_refund`, `get_refund` | Disbursement agent |
-| Webhooks | REST webhook subscription for order capture and payout status, verified by signature | Route handler |
-| MCP server | `@paypal/mcp` in Claude Code during development, and the hosted sandbox MCP endpoint | Development workflow, shown in the video |
+| Product                      | Reached through                                                                                     | Used by                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Orders: create, get, capture | Agent Toolkit `create_order`, `get_order`, `pay_order` plus JS SDK v6 buttons for the approval step | Giving agent, checkout page              |
+| Invoicing: create, send, get | Agent Toolkit `create_invoice`, `send_invoice`, `get_invoice`                                       | Disbursement agent                       |
+| Payouts                      | Custom tool wrapping the Payouts REST API, registered next to toolkit tools                         | Disbursement agent                       |
+| Reporting: list transactions | Agent Toolkit `list_transactions`                                                                   | Disbursement agent, reconciliation       |
+| Refunds                      | Agent Toolkit `create_refund`, `get_refund`                                                         | Disbursement agent                       |
+| Webhooks                     | REST webhook subscription for order capture and payout status, verified by signature                | Route handler                            |
+| MCP server                   | `@paypal/mcp` in Claude Code during development, and the hosted sandbox MCP endpoint                | Development workflow, shown in the video |
 
 The toolkit does not ship a Payouts tool. The custom tool follows the same shape as the official tools: a Zod input schema, a description written for the model, and a thin call to the REST API. The write-up presents this as an example of extending the toolkit.
 
@@ -133,18 +133,18 @@ Every tool call streams to the browser as a receipt-style row: tool name, summar
 
 Single Postgres database, Drizzle ORM, immutable ledger rows.
 
-| Table | Purpose |
-|---|---|
-| borrowers | Identity and contact, no loan credentials |
-| campaigns | Extracted loan facts, story, goal, verification status, servicer account reference |
-| sponsors | Match rules: cohort filter, ratio, cap |
-| orders | PayPal order ID, donor, total, capture status, split |
-| pledges | One row per campaign share of an order |
-| invoices | PayPal invoice ID, sponsor, amount, status |
-| disbursements | PayPal payout batch and item IDs, campaign, amount, status |
-| ledger_entries | Append-only. Every money event with PayPal identifiers and the agent run that produced it |
-| agent_runs | Agent name, trigger, steps, tool calls, outcome |
-| reconciliation_exceptions | Mismatches between PayPal transaction history and the ledger |
+| Table                     | Purpose                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| borrowers                 | Identity and contact, no loan credentials                                                 |
+| campaigns                 | Extracted loan facts, story, goal, verification status, servicer account reference        |
+| sponsors                  | Match rules: cohort filter, ratio, cap                                                    |
+| orders                    | PayPal order ID, donor, total, capture status, split                                      |
+| pledges                   | One row per campaign share of an order                                                    |
+| invoices                  | PayPal invoice ID, sponsor, amount, status                                                |
+| disbursements             | PayPal payout batch and item IDs, campaign, amount, status                                |
+| ledger_entries            | Append-only. Every money event with PayPal identifiers and the agent run that produced it |
+| agent_runs                | Agent name, trigger, steps, tool calls, outcome                                           |
+| reconciliation_exceptions | Mismatches between PayPal transaction history and the ledger                              |
 
 Ledger entries are never updated. Corrections are new entries that reference the original.
 
@@ -191,16 +191,16 @@ Health and demo control
 
 ## 9. Reliability design
 
-| Risk | Mitigation |
-|---|---|
-| Sandbox latency or transient errors | Retries with backoff on every PayPal call, idempotency keys on orders, invoices, and payouts |
-| Webhook never arrives | Polling fallback with `get_order` and payout status reads |
-| Agent loops or runs away | Maximum step count per run, per-run payout cap, recipient allowlist, dry-run mode |
-| Double payment on retry | Disbursement identifier reused as the payout sender item ID; PayPal rejects duplicates |
-| Model returns malformed tool input | Zod validation on every tool, agent receives the error and retries once, then the run fails loudly |
-| Judge finds an empty or broken state | Reset route, seeded data, published demo credentials |
-| Secrets leak | No secrets in the repository, environment variables only, startup validation, no logging of credentials or account numbers |
-| Demo page works on our machine only | Clean-machine run from the README two days before submission |
+| Risk                                 | Mitigation                                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Sandbox latency or transient errors  | Retries with backoff on every PayPal call, idempotency keys on orders, invoices, and payouts                               |
+| Webhook never arrives                | Polling fallback with `get_order` and payout status reads                                                                  |
+| Agent loops or runs away             | Maximum step count per run, per-run payout cap, recipient allowlist, dry-run mode                                          |
+| Double payment on retry              | Disbursement identifier reused as the payout sender item ID; PayPal rejects duplicates                                     |
+| Model returns malformed tool input   | Zod validation on every tool, agent receives the error and retries once, then the run fails loudly                         |
+| Judge finds an empty or broken state | Reset route, seeded data, published demo credentials                                                                       |
+| Secrets leak                         | No secrets in the repository, environment variables only, startup validation, no logging of credentials or account numbers |
+| Demo page works on our machine only  | Clean-machine run from the README two days before submission                                                               |
 
 ---
 
@@ -237,11 +237,11 @@ Health and demo control
 
 ## 13. Decisions and alternatives
 
-| Decision | Alternative considered | Why this way |
-|---|---|---|
-| Vercel AI SDK | OpenAI Agents SDK, LangChain, CrewAI | All are officially supported by the toolkit. Vercel AI SDK lives inside Next.js and streams tool calls to the UI without extra plumbing, which makes the activity panel nearly free |
-| Claude models | Nova, GPT | Strong structured tool use and vision. Any function-calling model works with the toolkit, so this is swappable |
-| Custom Payouts tool | Model the servicer as a merchant and pay an order | Payouts is the correct product for platform-to-recipient transfers and tells a better agentic story |
-| Elastic | Postgres full-text search | The sponsor prize is a bonus, but hybrid retrieval genuinely improves intent matching and is a credible production choice |
-| Render | Vercel | Sponsor tool, Postgres and cron in one place, and a stable public URL for webhooks |
-| Postgres append-only ledger | Mutable balances | Auditability is the product. The ledger must reconcile against PayPal, not replace it |
+| Decision                    | Alternative considered                            | Why this way                                                                                                                                                                        |
+| --------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vercel AI SDK               | OpenAI Agents SDK, LangChain, CrewAI              | All are officially supported by the toolkit. Vercel AI SDK lives inside Next.js and streams tool calls to the UI without extra plumbing, which makes the activity panel nearly free |
+| Claude models               | Nova, GPT                                         | Strong structured tool use and vision. Any function-calling model works with the toolkit, so this is swappable                                                                      |
+| Custom Payouts tool         | Model the servicer as a merchant and pay an order | Payouts is the correct product for platform-to-recipient transfers and tells a better agentic story                                                                                 |
+| Elastic                     | Postgres full-text search                         | The sponsor prize is a bonus, but hybrid retrieval genuinely improves intent matching and is a credible production choice                                                           |
+| Render                      | Vercel                                            | Sponsor tool, Postgres and cron in one place, and a stable public URL for webhooks                                                                                                  |
+| Postgres append-only ledger | Mutable balances                                  | Auditability is the product. The ledger must reconcile against PayPal, not replace it                                                                                               |

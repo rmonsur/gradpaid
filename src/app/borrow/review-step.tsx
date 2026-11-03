@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Badge, Button, Card } from '@/components/ui';
 import { formatUsd } from '@/lib/money';
-import { Field, TextInput, TextArea } from './form-fields';
+import { Field, TextInput, TextArea } from './fields';
 import {
   LOW_CONFIDENCE_THRESHOLD,
   defaultGoalDollars,
@@ -70,7 +70,7 @@ export function ReviewStep({ intake, onBack, onContinue }: ReviewStepProps): Rea
           <Badge tone={lowConfidence ? 'warning' : 'success'}>{confidencePct}% confidence</Badge>
         </div>
         {lowConfidence ? (
-          <p className="mb-3 rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning">
+          <p className="mb-3 rounded-[var(--radius-control)] border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-warning">
             The agent was not sure about some fields. Check them against your statement before
             publishing.
           </p>
