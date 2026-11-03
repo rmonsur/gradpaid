@@ -1,6 +1,11 @@
 import { desc, eq } from 'drizzle-orm';
 import { getDb } from '@/db/client';
-import { ledgerEntries, reconciliationExceptions, type LedgerEntry } from '@/db/schema';
+import {
+  ledgerEntries,
+  reconciliationExceptions,
+  type LedgerEntry,
+  type ReconciliationException,
+} from '@/db/schema';
 import { newId } from '@/lib/ids';
 
 export interface AppendLedgerInput {
@@ -64,4 +69,11 @@ export async function recordException(input: ExceptionInput): Promise<void> {
       actualCents: input.actualCents ?? null,
       detail: input.detail,
     });
+}
+
+export async function listReconciliationExceptions(): Promise<readonly ReconciliationException[]> {
+  return getDb()
+    .select()
+    .from(reconciliationExceptions)
+    .orderBy(desc(reconciliationExceptions.createdAt));
 }

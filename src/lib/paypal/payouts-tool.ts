@@ -1,7 +1,7 @@
 import { tool, type Tool } from 'ai';
 import { z } from 'zod';
 import type { PayPalAgentToolkit } from '@paypal/agent-toolkit/ai-sdk';
-import { sendPayout, getPayoutBatch } from './payouts';
+import { sendPayout, getPayoutBatch, type PayoutRequest, type PayoutResult } from './payouts';
 import { MAX_PAYOUT_PER_RUN_CENTS } from '@/lib/constants';
 
 export interface PayoutGuard {
@@ -11,6 +11,12 @@ export interface PayoutGuard {
   readonly spent: { value: number };
   readonly dryRun: boolean;
 }
+
+/** The money-moving boundary; injectable so the guard can be tested without PayPal. */
+export type SendPayoutFn = (
+  toolkit: PayPalAgentToolkit,
+  req: PayoutRequest,
+) => Promise<PayoutResult>;
 
 const sendPayoutInput = z.object({
   disbursementId: z
@@ -33,6 +39,7 @@ const sendPayoutInput = z.object({
 export function createPayoutTools(
   toolkit: PayPalAgentToolkit,
   guard: PayoutGuard,
+  send: SendPayoutFn = sendPayout,
 ): Readonly<Record<string, Tool>> {
   return {
     send_payout: tool({
@@ -47,9 +54,9 @@ export function createPayoutTools(
           return { error: 'per-run payout cap exceeded' };
         }
         if (guard.dryRun) {
-          return { dryRun: true, wouldSend: input };
+          return { simulated: true, dryRun: true, wouldSend: input };
         }
-        const result = await sendPayout(toolkit, input);
+        const result = await send(toolkit, input);
         guard.spent.value += input.amountCents;
         return result;
       },

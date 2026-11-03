@@ -79,3 +79,4 @@ export const reconciliationExceptions = pgTable('reconciliation_exceptions', {
 export type Disbursement = typeof disbursements.$inferSelect;
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type AgentRun = typeof agentRuns.$inferSelect;
+export type ReconciliationException = typeof reconciliationExceptions.$inferSelect;

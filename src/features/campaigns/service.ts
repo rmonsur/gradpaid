@@ -109,18 +109,19 @@ export async function searchCampaignsInPostgres(
     .split(/\s+/)
     .filter((t) => t.length > 2);
   const haystack = sql`lower(${campaigns.title} || ' ' || ${campaigns.story} || ' ' || ${campaigns.school} || ' ' || ${campaigns.fieldOfStudy} || ' ' || ${campaigns.state} || ' ' || array_to_string(${campaigns.cohortTags}, ' '))`;
-  const score =
-    terms.length === 0
-      ? sql`0`
-      : sql.join(
-          terms.map((t) => sql`(case when ${haystack} like ${`%${t}%`} then 1 else 0 end)`),
-          sql` + `,
-        );
+  const score = sql.join(
+    terms.map((t) => sql`(case when ${haystack} like ${`%${t}%`} then 1 else 0 end)`),
+    sql` + `,
+  );
+  const hasTerms = terms.length > 0;
+  const ordering = hasTerms
+    ? [desc(score), desc(campaigns.createdAt)]
+    : [desc(campaigns.createdAt)];
   const rows = await getDb()
     .select()
     .from(campaigns)
-    .where(and(eq(campaigns.status, 'active')))
-    .orderBy(desc(score), desc(campaigns.createdAt))
+    .where(and(eq(campaigns.status, 'active'), hasTerms ? sql`${score} > 0` : undefined))
+    .orderBy(...ordering)
     .limit(limit);
   return rows.map(toSummary);
 }

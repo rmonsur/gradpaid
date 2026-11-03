@@ -5,11 +5,10 @@ import { listUndisbursedPledges, attachPledgesToDisbursement } from '@/features/
 import { planDisbursements } from '@/features/disbursement/plan';
 import { createDisbursement, markDisbursement } from '@/features/disbursement/service';
 import { getCampaign, addDisbursed } from '@/features/campaigns/service';
-import { listSponsors, addMatched, recordInvoice } from '@/features/sponsors/service';
+import { listSponsorMatchDue, recordInvoice } from '@/features/sponsors/service';
 import { appendLedger, recordException } from '@/features/ledger/service';
-import { computeMatch } from '@/features/matching/match';
 import { getDb } from '@/db/client';
-import { pledges, campaigns } from '@/db/schema';
+import { pledges } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 const LOAN_REF_VISIBLE_DIGITS = 4;
@@ -114,33 +113,12 @@ export function createDisbursementLocalTools(
         'Compute, per sponsor, the match amount now owed from captured pledges on their cohort, net of what was already invoiced.',
       parameters: z.object({}),
       execute: async (): Promise<unknown> => {
-        const sponsorsList = await listSponsors();
-        const allPledges = await getDb()
-          .select({ cents: pledges.cents, tags: campaigns.cohortTags })
-          .from(pledges)
-          .innerJoin(campaigns, eq(campaigns.id, pledges.campaignId));
-        const due = sponsorsList.map((s) => {
-          const rule = {
-            sponsorId: s.id,
-            cohortTag: s.cohortTag,
-            ratioBps: s.ratioBps,
-            capCents: s.capCents,
-            matchedCents: 0,
-          };
-          const gross = allPledges.reduce(
-            (sum, p) => sum + (computeMatch(p.cents, p.tags, [rule])[0]?.matchCents ?? 0),
-            0,
-          );
-          const capped = Math.min(gross, s.capCents);
-          return {
-            sponsorId: s.id,
-            sponsorName: s.name,
-            sponsorEmail: env.PAYPAL_SPONSOR_EMAIL,
-            cohortTag: s.cohortTag,
-            dueCents: Math.max(0, capped - s.matchedCents),
-          };
-        });
-        return { due: due.filter((d) => d.dueCents > 0) };
+        const due = await listSponsorMatchDue();
+        return {
+          due: due
+            .filter((d) => d.dueCents > 0)
+            .map((d) => ({ ...d, sponsorEmail: env.PAYPAL_SPONSOR_EMAIL })),
+        };
       },
     }),
     record_sponsor_invoice: tool({
@@ -155,7 +133,6 @@ export function createDisbursementLocalTools(
           return { ok: true, ...simulated };
         }
         await recordInvoice({ ...input, status: 'sent' });
-        await addMatched(input.sponsorId, input.amountCents);
         await appendLedger({
           kind: 'sponsor_invoiced',
           amountCents: input.amountCents,

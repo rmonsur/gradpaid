@@ -2,6 +2,9 @@ import { getEnv } from '@/lib/env';
 
 const SANDBOX_OAUTH_URL = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
 const TOKEN_SAFETY_MS = 60_000;
+const LOOPBACK_IPV4 = '127.0.0.1';
+/** RFC 6761 reserved suffixes that never resolve publicly. */
+const LOCAL_TLD_SUFFIXES = ['.localhost', '.test'] as const;
 
 interface TokenResponse {
   readonly access_token: string;
@@ -11,8 +14,12 @@ interface TokenResponse {
 let cached: { token: string; expiresAt: number } | undefined;
 
 /** PayPal rejects localhost and bare IPs as token domains, so those are left unscoped. */
-function isPublicHost(host: string): boolean {
-  return host.includes('.') && host !== '127.0.0.1' && !host.endsWith('.localhost');
+export function isPublicHost(host: string): boolean {
+  return (
+    host.includes('.') &&
+    host !== LOOPBACK_IPV4 &&
+    !LOCAL_TLD_SUFFIXES.some((suffix) => host.endsWith(suffix))
+  );
 }
 
 /**
