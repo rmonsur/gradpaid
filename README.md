@@ -6,6 +6,9 @@ GradPaid is crowd-repayment for student debt, run by AI agents on the PayPal dev
 
 Built for the PayPal AI Hackathon. Everything runs in the PayPal sandbox.
 
+Hosted demo: https://gradpaid.onrender.com (Render web service, Postgres, and a cron job that runs the
+disbursement agent every six hours).
+
 ## Where PayPal's AI SDK is used
 
 Every money movement is a tool call made by an agent through the official PayPal Agent Toolkit (`@paypal/agent-toolkit`, Vercel AI SDK integration), and every call is shown live in the app.
@@ -15,6 +18,13 @@ Every money movement is a tool call made by an agent through the official PayPal
 | Giving agent (donor chat) | `create_order`, `get_order`                                                           | campaign search (Elastic or Postgres), split proposal, order recording                                  |
 | Checkout capture          | `pay_order`                                                                           |                                                                                                         |
 | Disbursement agent        | `list_transactions`, `create_invoice`, `send_invoice`, `get_invoice`, `create_refund` | `send_payout` and `get_payout_batch` wrapping the PayPal Payouts REST API, plan, ledger, reconciliation |
+
+The disbursement agent never decides an amount or a recipient. `open_disbursement` computes the amount from
+the campaign's pledges on the server, `send_payout` takes only a disbursement id and reads the amount and
+receiver from the row, `record_sponsor_invoice` reads the invoice back from PayPal with `get_invoice` and
+refuses to record it if the total differs from the match due, and `get_ledger_expectations` hands the agent
+the captures it must find in `list_transactions`. Failed payouts keep their pledges and resume under the same
+idempotency key, crashed runs release what they planned, and only one run per agent can be live at a time.
 
 The Payouts tools are written in the same shape as the toolkit's own tools and registered alongside them, showing how the toolkit extends to products it does not ship yet. The PayPal MCP server (`@paypal/mcp`) was used in the development workflow to inspect sandbox state.
 
@@ -71,7 +81,7 @@ Sandbox buyer credentials and the demo token are on the Devpost submission page.
 ## Commands
 
 ```bash
-pnpm test            # unit and integration tests (integration tests need DATABASE_URL)
+pnpm test            # 77 unit and integration tests (integration tests need DATABASE_URL)
 pnpm typecheck
 pnpm lint
 pnpm disburse:dry    # run the disbursement agent from the CLI without sending payouts
@@ -80,7 +90,13 @@ pnpm disburse
 
 ## Reliability for judges
 
-Hosted on Render with a health endpoint at `/api/health`, a Postman monitor on it, seeded demo data with a one-click reset, idempotent order capture and payouts keyed on internal ids, webhook plus polling for capture, a receiver allowlist and per-run cap on payouts, and a Postgres fallback for search.
+Hosted on Render with a health endpoint at `/api/health`, a Postman collection and monitor on it, seeded demo data with a one-click reset (including one captured gift so the disbursement agent always has work), capture as a single conditional update so the webhook and the polling route cannot double count, payouts keyed on internal ids, a fixed receiver and per-run cap on payouts, rate limits on public endpoints, and a Postgres fallback for search.
+
+## Design and documentation
+
+- `doc/DESIGN.md`: the design system (Aura "SaaS Finance Platform" tokens: dark background, lime accent, Inter display, JetBrains Mono body). Every colour in the app is a token from this file.
+- `doc/diagrams/`: architecture, how a gift moves, the agent harness, and the deployment, as self-contained HTML, plus an interactive isometric figure of the money path in `doc/diagrams/money-path/`.
+- `.claude/skills/`: the engineering skills used to build and review this repo (tdd, code-review, diagnosing-bugs, implement). The impeccable, anatomy and diagram-design skills are installed locally and ignored by git; install them with `npx impeccable install` and `npx skills add wheresryan22/anatomy cathrynlavery/diagram-design`.
 
 ## Honest scope notes
 
