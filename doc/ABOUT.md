@@ -143,15 +143,14 @@ Judges test between December 1 and December 15 without the team present. The pro
 
 ## 11. Nine-day build plan
 
-| Date       | Milestone                                                                                         |
-| ---------- | ------------------------------------------------------------------------------------------------- |
-| Nov 4      | Sandbox accounts, Agent Toolkit wired into the agent runtime, donor checkout end to end on Render |
-| Nov 5 to 6 | Statement intake, Elastic campaign search, giving agent with split checkout                       |
-| Nov 7      | Disbursement agent, custom Payouts tool, sponsor invoicing, AG Grid ledger                        |
-| Nov 8 to 9 | Design polish, agent activity panel, reset and health endpoints, Postman collection               |
-| Nov 10     | Video and write-up                                                                                |
-| Nov 11     | Clean-machine judge run, fixes, submit                                                            |
-| Nov 12     | Buffer only. Deadline is 12:00 pm PT                                                              |
+| Date       | Milestone                                                                                                                                                                                                                                                                               |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nov 4      | Done: sandbox accounts, all three agents on the Agent Toolkit, real sandbox payouts and invoices, 77 tests, two-axis code review with the money path made server-authoritative, design system (doc/DESIGN.md) applied and clean under the impeccable detector, diagrams, live on Render |
+| Nov 5 to 6 | Playwright judge path, PayPal webhook on the hosted app, optional Elastic Cloud, mobile pass                                                                                                                                                                                            |
+| Nov 7 to 9 | Demo video, Devpost write-up, screenshots                                                                                                                                                                                                                                               |
+| Nov 10     | Clean-machine judge run, fixes                                                                                                                                                                                                                                                          |
+| Nov 11     | Submit                                                                                                                                                                                                                                                                                  |
+| Nov 12     | Buffer only. Deadline is 12:00 pm PT                                                                                                                                                                                                                                                    |
 
 ## 12. Open questions
 
