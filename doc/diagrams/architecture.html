@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GradPaid system architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0F1115;
+      --color-paper-2: #18181B;
+      --color-ink:     #FFFFFF;
+      --color-muted:   #A1A1AA;
+      --color-accent:  #84CC16;
+      --color-link:    #7DB3F5;
+      --font-sans:     'Inter', system-ui, sans-serif;
+      --font-mono:     'JetBrains Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1320px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-sans);
+      font-size: 1.75rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .sub {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 72ch;
+    }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · GradPaid</p>
+    <h1>GradPaid system architecture</h1>
+    <p class="sub">One Next.js deployable on Render. Every money movement is a PayPal Agent Toolkit call made by an agent, and every result lands in an append-only Postgres ledger.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-dark-title architecture-dark-desc">
+        <title id="architecture-dark-title">GradPaid system architecture</title>
+        <desc id="architecture-dark-desc">Architecture diagram showing the browser pages calling Next.js API routes on Render, three agents reaching the PayPal sandbox through the PayPal Agent Toolkit, an append-only Postgres ledger with optional Elastic search, and a Render cron job that triggers disbursement every six hours.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#A1A1AA"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#84CC16"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7DB3F5"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0F1115"/>
+
+        <!-- Zones (bg -> zones -> arrows -> labels -> nodes) -->
+        <rect x="248" y="72" width="472" height="272" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="264" y="76" width="124" height="12" rx="2" fill="#0F1115"/>
+        <text x="326" y="85" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.14em">APP · RENDER WEB SERVICE</text>
+
+        <rect x="248" y="416" width="472" height="152" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="264" y="420" width="116" height="12" rx="2" fill="#0F1115"/>
+        <text x="322" y="429" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DATA · RENDER POSTGRES</text>
+
+        <rect x="768" y="72" width="472" height="496" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="784" y="76" width="52" height="12" rx="2" fill="#0F1115"/>
+        <text x="810" y="85" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.14em">EXTERNAL</text>
+
+        <!-- Arrows (behind nodes) -->
+        <!-- Browser -> API routes -->
+        <line x1="200" y1="144" x2="280" y2="144" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- Render cron -> API routes -->
+        <line x1="848" y1="144" x2="480" y2="144" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- API routes -> Agents -->
+        <line x1="368" y1="184" x2="368" y2="240" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- Agents -> Agent Toolkit -->
+        <line x1="480" y1="280" x2="536" y2="280" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- Agent Toolkit -> PayPal sandbox -->
+        <line x1="696" y1="280" x2="848" y2="280" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- Agents -> Postgres ledger -->
+        <line x1="348" y1="320" x2="348" y2="464" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- Agents -> Elastic (optional, dashed) -->
+        <path d="M 412,320 V 384 Q 412,392 420,392 H 608 Q 616,392 616,400 V 464" fill="none" stroke="#A1A1AA" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+        <!-- Arrow labels (opaque masks, 8px gap from stroke) -->
+        <rect x="222" y="124" width="36" height="12" rx="2" fill="#0F1115"/>
+        <text x="240" y="133" fill="#7DB3F5" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">HTTPS</text>
+
+        <rect x="624" y="124" width="80" height="12" rx="2" fill="#0F1115"/>
+        <text x="664" y="133" fill="#7DB3F5" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">POST /DISBURSE</text>
+
+        <rect x="380" y="206" width="28" height="12" rx="2" fill="#0F1115"/>
+        <text x="394" y="215" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RUN</text>
+
+        <rect x="490" y="260" width="36" height="12" rx="2" fill="#0F1115"/>
+        <text x="508" y="269" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CALLS</text>
+
+        <rect x="732" y="260" width="80" height="12" rx="2" fill="#0F1115"/>
+        <text x="772" y="269" fill="#7DB3F5" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REST · SANDBOX</text>
+
+        <rect x="356" y="440" width="44" height="12" rx="2" fill="#0F1115"/>
+        <text x="378" y="449" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">WRITES</text>
+
+        <rect x="494" y="372" width="40" height="12" rx="2" fill="#0F1115"/>
+        <text x="514" y="381" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">SEARCH</text>
+
+        <!-- Node: Browser (input) -->
+        <rect x="40" y="104" width="160" height="80" rx="6" fill="#0F1115"/>
+        <rect x="40" y="104" width="160" height="80" rx="6" fill="rgba(161,161,170,0.10)" stroke="#A1A1AA" stroke-width="1"/>
+        <rect x="48" y="112" width="28" height="12" rx="2" fill="transparent" stroke="rgba(161,161,170,0.40)" stroke-width="0.8"/>
+        <text x="62" y="121" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">UI</text>
+        <text x="120" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Browser</text>
+        <text x="120" y="158" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">give · borrow · ledger</text>
+        <text x="120" y="171" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">console · PayPal button</text>
+
+        <!-- Node: API routes (backend) -->
+        <rect x="280" y="104" width="200" height="80" rx="6" fill="#0F1115"/>
+        <rect x="280" y="104" width="200" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="288" y="112" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="302" y="121" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">API</text>
+        <text x="380" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">API routes</text>
+        <text x="380" y="158" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">Next.js 16 route handlers</text>
+        <text x="380" y="171" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">chat, intake, capture, disburse</text>
+
+        <!-- Node: Agents (backend) -->
+        <rect x="280" y="240" width="200" height="80" rx="6" fill="#0F1115"/>
+        <rect x="280" y="240" width="200" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="288" y="248" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="302" y="257" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SDK</text>
+        <text x="380" y="278" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Agents</text>
+        <text x="380" y="294" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">giving · intake · disbursement</text>
+        <text x="380" y="307" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">Vercel AI SDK 4 · Claude</text>
+
+        <!-- Node: PayPal Agent Toolkit (focal) -->
+        <rect x="536" y="240" width="160" height="80" rx="6" fill="#0F1115"/>
+        <rect x="536" y="240" width="160" height="80" rx="6" fill="rgba(132,204,22,0.10)" stroke="#84CC16" stroke-width="1"/>
+        <rect x="544" y="248" width="40" height="12" rx="2" fill="transparent" stroke="rgba(132,204,22,0.50)" stroke-width="0.8"/>
+        <text x="564" y="257" fill="#84CC16" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PAYPAL</text>
+        <text x="616" y="278" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Agent Toolkit</text>
+        <text x="616" y="294" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">@paypal/agent-toolkit</text>
+        <text x="616" y="307" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">allowlisted per agent</text>
+
+        <!-- Node: Postgres ledger (focal) -->
+        <rect x="280" y="464" width="200" height="80" rx="6" fill="#0F1115"/>
+        <rect x="280" y="464" width="200" height="80" rx="6" fill="rgba(132,204,22,0.10)" stroke="#84CC16" stroke-width="1"/>
+        <rect x="288" y="472" width="28" height="12" rx="2" fill="transparent" stroke="rgba(132,204,22,0.50)" stroke-width="0.8"/>
+        <text x="302" y="481" fill="#84CC16" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PG</text>
+        <text x="380" y="502" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Postgres ledger</text>
+        <text x="380" y="518" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">Drizzle ORM · gradpaid-db</text>
+        <text x="380" y="531" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">append-only ledger_entries</text>
+
+        <!-- Node: Elastic Cloud (optional) -->
+        <rect x="536" y="464" width="160" height="80" rx="6" fill="#0F1115"/>
+        <rect x="536" y="464" width="160" height="80" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="544" y="472" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="558" y="481" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OPT</text>
+        <text x="616" y="502" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Elastic Cloud</text>
+        <text x="616" y="518" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">optional hybrid search</text>
+        <text x="616" y="531" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">falls back to Postgres</text>
+
+        <!-- Node: Render cron (external) -->
+        <rect x="848" y="104" width="320" height="80" rx="6" fill="#0F1115"/>
+        <rect x="848" y="104" width="320" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="856" y="112" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="872" y="121" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CRON</text>
+        <text x="1008" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Render cron</text>
+        <text x="1008" y="158" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">gradpaid-disbursement · every 6h</text>
+        <text x="1008" y="171" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">POST /api/disburse · bearer CRON_SECRET</text>
+
+        <!-- Node: PayPal sandbox (external) -->
+        <rect x="848" y="240" width="320" height="80" rx="6" fill="#0F1115"/>
+        <rect x="848" y="240" width="320" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="856" y="248" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="870" y="257" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+        <text x="1008" y="278" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">PayPal sandbox</text>
+        <text x="1008" y="294" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">Orders · Invoicing · Transaction Search</text>
+        <text x="1008" y="307" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">Payouts REST via custom tool</text>
+
+        <!-- Legend strip -->
+        <line x1="40" y1="648" x2="1240" y2="648" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="40" y="664" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+        <rect x="40" y="680" width="14" height="10" rx="2" fill="rgba(132,204,22,0.10)" stroke="#84CC16" stroke-width="1"/>
+        <text x="60" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Focal: toolkit and ledger</text>
+
+        <rect x="200" y="680" width="14" height="10" rx="2" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <text x="220" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">App code</text>
+
+        <rect x="300" y="680" width="14" height="10" rx="2" fill="rgba(161,161,170,0.10)" stroke="#A1A1AA" stroke-width="1"/>
+        <text x="320" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">User / browser</text>
+
+        <rect x="420" y="680" width="14" height="10" rx="2" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <text x="440" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">External service</text>
+
+        <rect x="548" y="680" width="14" height="10" rx="2" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="568" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Optional</text>
+
+        <line x1="648" y1="685" x2="676" y2="685" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="684" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">HTTP / API call</text>
+
+        <line x1="788" y1="685" x2="816" y2="685" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="824" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">In-process call</text>
+
+        <line x1="928" y1="685" x2="956" y2="685" stroke="#A1A1AA" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+        <text x="964" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Optional path</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>

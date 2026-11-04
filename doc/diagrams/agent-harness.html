@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One agent run, harnessed</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #0F1115;
+      --color-paper-2: #18181B;
+      --color-ink:     #FFFFFF;
+      --color-muted:   #A1A1AA;
+      --color-accent:  #84CC16;
+      --color-link:    #7DB3F5;
+      --font-sans:     'Inter', system-ui, sans-serif;
+      --font-mono:     'JetBrains Mono', ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1320px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-sans);
+      font-size: 1.75rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 0.5rem;
+    }
+    .sub {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      margin-bottom: 1.5rem;
+      max-width: 80ch;
+    }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · GradPaid</p>
+    <h1>One agent run, harnessed</h1>
+    <p class="sub">The disbursement agent as the example. A run starts from the Render cron, the agent console, or the CLI; the model only ever supplies a disbursement id, never an amount or a receiver. The middleware strips the temperature AI SDK 4 injects and the reasoning blocks it replays, both of which Claude 5 rejects.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="agent-harness-dark-title agent-harness-dark-desc">
+        <title id="agent-harness-dark-title">One agent run, harnessed</title>
+        <desc id="agent-harness-dark-desc">Architecture diagram of one GradPaid agent run: a database run lock admits one running run per agent, the Vercel AI SDK tool loop calls Claude through a parameter-stripping middleware, and every tool, whether PayPal Agent Toolkit, custom payout, or local ledger tool, is wrapped by withActivity, which records each call into agent_runs; a dry run swaps in simulated tools.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#A1A1AA"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#84CC16"/></marker>
+          <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7DB3F5"/></marker>
+        </defs>
+
+        <rect width="100%" height="100%" fill="#0F1115"/>
+
+        <!-- Zone: tool set -->
+        <rect x="840" y="72" width="400" height="560" rx="8" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <rect x="856" y="76" width="156" height="12" rx="2" fill="#0F1115"/>
+        <text x="934" y="85" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.14em">TOOL SET · EVERY EXECUTE WRAPPED</text>
+
+        <!-- Arrows (behind nodes) -->
+        <!-- Run lock -> Tool loop -->
+        <line x1="184" y1="312" x2="244" y2="312" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- Tool loop -> Claude (each step) -->
+        <line x1="344" y1="272" x2="344" y2="184" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <!-- Tool loop -> withActivity -->
+        <line x1="444" y1="312" x2="512" y2="312" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- withActivity -> the three tool groups (fanned ports 292 / 312 / 332) -->
+        <path d="M 688,292 H 760 Q 768,292 768,284 V 160 Q 768,152 776,152 H 880" fill="none" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="688" y1="312" x2="880" y2="312" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 688,332 H 760 Q 768,332 768,340 V 464 Q 768,472 776,472 H 880" fill="none" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- withActivity -> agent_runs (finishRun writes toolCalls) -->
+        <line x1="600" y1="352" x2="600" y2="448" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <!-- Run lock -> agent_runs (the lock is a row) -->
+        <path d="M 112,352 V 480 Q 112,488 120,488 H 512" fill="none" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+        <!-- Arrow labels -->
+        <rect x="194" y="292" width="40" height="12" rx="2" fill="#0F1115"/>
+        <text x="214" y="301" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">LOCKED</text>
+
+        <rect x="352" y="222" width="60" height="12" rx="2" fill="#0F1115"/>
+        <text x="382" y="231" fill="#7DB3F5" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EACH STEP</text>
+
+        <rect x="456" y="292" width="44" height="12" rx="2" fill="#0F1115"/>
+        <text x="478" y="301" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EXECUTE</text>
+
+        <rect x="608" y="394" width="48" height="12" rx="2" fill="#0F1115"/>
+        <text x="632" y="403" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">RECORDS</text>
+
+        <rect x="284" y="468" width="64" height="12" rx="2" fill="#0F1115"/>
+        <text x="316" y="477" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.06em">ONE RUNNING</text>
+
+        <!-- Node: Run lock (security) -->
+        <rect x="40" y="272" width="144" height="80" rx="6" fill="#0F1115"/>
+        <rect x="40" y="272" width="144" height="80" rx="6" fill="rgba(132,204,22,0.05)" stroke="rgba(132,204,22,0.50)" stroke-width="1" stroke-dasharray="4,4"/>
+        <rect x="48" y="280" width="28" height="12" rx="2" fill="transparent" stroke="rgba(132,204,22,0.40)" stroke-width="0.8"/>
+        <text x="62" y="289" fill="#84CC16" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PG</text>
+        <text x="112" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Run lock</text>
+        <text x="112" y="326" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">startRun → agent_runs</text>
+        <text x="112" y="339" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">agent_runs_one_running</text>
+
+        <!-- Node: Claude (external) -->
+        <rect x="244" y="104" width="200" height="80" rx="6" fill="#0F1115"/>
+        <rect x="244" y="104" width="200" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="252" y="112" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="266" y="121" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LLM</text>
+        <text x="344" y="142" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Claude Sonnet 5.5</text>
+        <text x="344" y="158" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">wrapLanguageModel middleware</text>
+        <text x="344" y="171" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">strips temperature · reasoning</text>
+
+        <!-- Node: Tool loop (backend) -->
+        <rect x="244" y="272" width="200" height="80" rx="6" fill="#0F1115"/>
+        <rect x="244" y="272" width="200" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="252" y="280" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="266" y="289" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">SDK</text>
+        <text x="344" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Tool loop</text>
+        <text x="344" y="326" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">generateText / streamText</text>
+        <text x="344" y="339" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">maxSteps 12 · 24 to disburse</text>
+
+        <!-- Node: withActivity (focal) -->
+        <rect x="512" y="272" width="176" height="80" rx="6" fill="#0F1115"/>
+        <rect x="512" y="272" width="176" height="80" rx="6" fill="rgba(132,204,22,0.10)" stroke="#84CC16" stroke-width="1"/>
+        <rect x="520" y="280" width="32" height="12" rx="2" fill="transparent" stroke="rgba(132,204,22,0.50)" stroke-width="0.8"/>
+        <text x="536" y="289" fill="#84CC16" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">WRAP</text>
+        <text x="600" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">withActivity</text>
+        <text x="600" y="326" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">times every tool call</text>
+        <text x="600" y="339" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">records input, output, ok</text>
+
+        <!-- Node: agent_runs (store) -->
+        <rect x="512" y="448" width="176" height="80" rx="6" fill="#0F1115"/>
+        <rect x="512" y="448" width="176" height="80" rx="6" fill="rgba(255,255,255,0.05)" stroke="#A1A1AA" stroke-width="1"/>
+        <rect x="520" y="456" width="28" height="12" rx="2" fill="transparent" stroke="rgba(161,161,170,0.50)" stroke-width="0.8"/>
+        <text x="534" y="465" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PG</text>
+        <text x="600" y="486" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">agent_runs</text>
+        <text x="600" y="502" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">toolCalls jsonb · summary</text>
+        <text x="600" y="515" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">status · trigger · timings</text>
+
+        <!-- Node: PayPal Agent Toolkit (backend) -->
+        <rect x="880" y="112" width="320" height="80" rx="6" fill="#0F1115"/>
+        <rect x="880" y="112" width="320" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="888" y="120" width="40" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="908" y="129" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PAYPAL</text>
+        <text x="1040" y="150" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">PayPal Agent Toolkit</text>
+        <text x="1040" y="166" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">allowlisted actions per agent</text>
+        <text x="1040" y="179" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">orders · invoices · transactions · refunds</text>
+
+        <!-- Node: Payout tools (backend, custom) -->
+        <rect x="880" y="272" width="320" height="80" rx="6" fill="#0F1115"/>
+        <rect x="880" y="272" width="320" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="888" y="280" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="904" y="289" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">REST</text>
+        <text x="1040" y="310" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Payout tools (custom)</text>
+        <text x="1040" y="326" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">send_payout · get_payout_batch</text>
+        <text x="1040" y="339" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">fixed receiver · server amount · serial · $5,000 cap</text>
+
+        <!-- Node: Local tools (backend) -->
+        <rect x="880" y="432" width="320" height="80" rx="6" fill="#0F1115"/>
+        <rect x="880" y="432" width="320" height="80" rx="6" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <rect x="888" y="440" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.40)" stroke-width="0.8"/>
+        <text x="902" y="449" fill="#FFFFFF" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PG</text>
+        <text x="1040" y="470" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Local tools</text>
+        <text x="1040" y="486" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">get_disbursement_plan · open_disbursement</text>
+        <text x="1040" y="499" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">sponsor match · ledger expectations · reconciliation</text>
+
+        <!-- Node: Dry run (optional) -->
+        <rect x="880" y="552" width="320" height="56" rx="6" fill="#0F1115"/>
+        <rect x="880" y="552" width="320" height="56" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="888" y="560" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="902" y="569" fill="#A1A1AA" font-size="7" font-family="'JetBrains Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OPT</text>
+        <text x="1040" y="585" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Inter', sans-serif" text-anchor="middle">Dry run</text>
+        <text x="1040" y="599" fill="#A1A1AA" font-size="9" font-family="'JetBrains Mono', monospace" text-anchor="middle">dryRun: simulated payouts, invoices, ledger writes</text>
+
+        <!-- Legend strip -->
+        <line x1="40" y1="648" x2="1240" y2="648" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+        <text x="40" y="664" fill="#A1A1AA" font-size="8" font-family="'JetBrains Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+        <rect x="40" y="680" width="14" height="10" rx="2" fill="rgba(132,204,22,0.10)" stroke="#84CC16" stroke-width="1"/>
+        <text x="60" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Focal: the audit wrapper</text>
+
+        <rect x="200" y="680" width="14" height="10" rx="2" fill="rgba(132,204,22,0.05)" stroke="rgba(132,204,22,0.50)" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="220" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Guard / lock</text>
+
+        <rect x="308" y="680" width="14" height="10" rx="2" fill="#18181B" stroke="#FFFFFF" stroke-width="1"/>
+        <text x="328" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">App code</text>
+
+        <rect x="400" y="680" width="14" height="10" rx="2" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <text x="420" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">External model</text>
+
+        <rect x="516" y="680" width="14" height="10" rx="2" fill="rgba(255,255,255,0.05)" stroke="#A1A1AA" stroke-width="1"/>
+        <text x="536" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Postgres table</text>
+
+        <rect x="632" y="680" width="14" height="10" rx="2" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="652" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Optional mode</text>
+
+        <line x1="748" y1="685" x2="776" y2="685" stroke="#7DB3F5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <text x="784" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">Model call</text>
+
+        <line x1="860" y1="685" x2="888" y2="685" stroke="#A1A1AA" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <text x="896" y="688" fill="#A1A1AA" font-size="8.5" font-family="'Inter', sans-serif">In-process call</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
