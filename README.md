@@ -95,7 +95,7 @@ Hosted on Render with a health endpoint at `/api/health`, a Postman collection a
 ## Design and documentation
 
 - `doc/DESIGN.md`: the design system (Aura "SaaS Finance Platform" tokens: dark background, lime accent, Inter display, JetBrains Mono body). Every colour in the app is a token from this file.
-- `doc/diagrams/`: architecture, how a gift moves, the agent harness, and the deployment, as self-contained HTML, plus an interactive isometric figure of the money path in `doc/diagrams/money-path/`.
+- `doc/diagrams/`: architecture, how a gift moves, the agent harness, and the deployment, as self-contained HTML, plus an interactive isometric figure of the money path in `doc/diagrams/money-path/` (open `index.html`; rebuilding with `node doc/diagrams/money-path/build.mjs` needs the anatomy skill installed under `.claude/skills/anatomy`).
 - `.claude/skills/`: the engineering skills used to build and review this repo (tdd, code-review, diagnosing-bugs, implement). The impeccable, anatomy and diagram-design skills are installed locally and ignored by git; install them with `npx impeccable install` and `npx skills add wheresryan22/anatomy cathrynlavery/diagram-design`.
 
 ## Honest scope notes
