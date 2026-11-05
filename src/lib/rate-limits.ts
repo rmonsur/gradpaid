@@ -6,6 +6,8 @@ const INTAKE_PER_MINUTE = 5;
 const CHECKOUT_PER_MINUTE = 30;
 const CLIENT_TOKEN_PER_MINUTE = 30;
 const INTERNAL_PER_MINUTE = 10;
+const PROOF_PER_MINUTE = 30;
+const LIVE_PER_MINUTE = 60;
 
 /** One limiter per public endpoint, shared across requests in this process. */
 export const RATE_LIMITS: Readonly<Record<string, RateLimiter>> = {
@@ -14,4 +16,6 @@ export const RATE_LIMITS: Readonly<Record<string, RateLimiter>> = {
   checkout: createRateLimiter({ limit: CHECKOUT_PER_MINUTE, windowMs: ONE_MINUTE_MS }),
   clientToken: createRateLimiter({ limit: CLIENT_TOKEN_PER_MINUTE, windowMs: ONE_MINUTE_MS }),
   internal: createRateLimiter({ limit: INTERNAL_PER_MINUTE, windowMs: ONE_MINUTE_MS }),
+  proof: createRateLimiter({ limit: PROOF_PER_MINUTE, windowMs: ONE_MINUTE_MS }),
+  live: createRateLimiter({ limit: LIVE_PER_MINUTE, windowMs: ONE_MINUTE_MS }),
 };

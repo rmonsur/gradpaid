@@ -1,4 +1,5 @@
 import { streamText, tool, type CoreMessage, type Tool } from 'ai';
+import { prepaymentImpact } from '@/features/campaigns/impact';
 import { z } from 'zod';
 import { agentModel } from './model';
 import { withActivity, createActivityRecorder } from './activity';
@@ -19,7 +20,7 @@ const SYSTEM_PROMPT = `You are the GradPaid giving agent. You help a donor direc
 Follow this sequence and keep replies short and warm:
 1. Understand who the donor wants to help and how much they want to give. Ask one question at a time if either is missing.
 2. Call search_campaigns with their intent. Present at most ${MAX_SPLIT_CAMPAIGNS} campaigns with one line each on why they fit.
-3. Call propose_split with the amount and chosen campaign ids. Show the split in dollars and ask the donor to confirm.
+3. Call propose_split with the amount and chosen campaign ids. Show the split in dollars, and for each line say how much interest it saves and how many days sooner that loan is paid off, using interestSavedDollars and daysSooner exactly as returned. Then ask the donor to confirm.
 4. Only after the donor confirms, call create_order with one item per campaign, then record_donation_order with the PayPal order id and the exact same split.
 5. Tell the donor the PayPal button is ready. Do not invent order ids, amounts, or campaigns.
 
@@ -109,7 +110,18 @@ function buildLocalTools(
         });
         const split = splitDonation(totalCents, candidates);
         return {
-          split: split.map((l) => ({ ...l, dollars: fromCents(l.cents).toFixed(2) })),
+          split: split.map((l) => {
+            const loan = rows.find((r) => r.id === l.campaignId);
+            const impact = loan ? prepaymentImpact(loan, l.cents) : undefined;
+            return {
+              ...l,
+              dollars: fromCents(l.cents).toFixed(2),
+              interestSavedDollars: impact
+                ? fromCents(impact.interestSavedCents).toFixed(2)
+                : '0.00',
+              daysSooner: impact?.daysSooner ?? 0,
+            };
+          }),
           totalDollars: fromCents(totalCents).toFixed(2),
         };
       },

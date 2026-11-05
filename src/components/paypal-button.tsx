@@ -146,8 +146,8 @@ export function PayPalButton({
           PayPal capture <code className="font-mono">{phase.captureId}</code>. The disbursement
           agent will pay the servicer on its next run.
         </div>
-        <Link href="/ledger" className="font-medium underline">
-          See it on the public ledger
+        <Link href={`/proof?ref=${phase.captureId}`} className="font-medium text-accent underline">
+          Follow this gift to the loan servicer
         </Link>
       </div>
     );

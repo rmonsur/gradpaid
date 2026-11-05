@@ -70,6 +70,14 @@ function CampaignCard({ campaign }: { campaign: CampaignSummary }): React.ReactE
           <span className="text-accent">{formatUsd(campaign.raisedCents)} raised</span>
           <span className="text-muted">{formatUsd(campaign.goalCents)} goal</span>
         </div>
+        <p className="text-xs text-foreground">
+          $50 here saves{' '}
+          <span className="text-accent">
+            {formatUsd(campaign.impactOfFifty.interestSavedCents)}
+          </span>{' '}
+          of interest and ends the loan{' '}
+          <span className="text-accent">{campaign.impactOfFifty.daysSooner} days</span> sooner.
+        </p>
         <p className="label normal-case tracking-normal">
           Paid to {campaign.servicerName}. Never to the borrower.
         </p>

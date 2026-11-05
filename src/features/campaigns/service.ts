@@ -2,9 +2,12 @@ import { eq, desc, sql, and, inArray } from 'drizzle-orm';
 import { getDb } from '@/db/client';
 import { campaigns, borrowers, type Campaign, type NewCampaign } from '@/db/schema';
 import { newId } from '@/lib/ids';
+import { prepaymentImpact, type PrepaymentImpact } from './impact';
 
 /** Words shorter than this are ignored by the Postgres fallback search. */
 const MIN_SEARCH_TERM_CHARS = 3;
+/** The gift size quoted on campaign cards. */
+export const SAMPLE_GIFT_CENTS = 5_000;
 
 export interface CampaignSummary {
   readonly id: string;
@@ -20,6 +23,8 @@ export interface CampaignSummary {
   readonly disbursedCents: number;
   readonly remainingCents: number;
   readonly status: Campaign['status'];
+  /** What a $50 gift does to this loan: interest no longer owed and days sooner paid off. */
+  readonly impactOfFifty: PrepaymentImpact;
 }
 
 export function toSummary(c: Campaign): CampaignSummary {
@@ -37,6 +42,7 @@ export function toSummary(c: Campaign): CampaignSummary {
     disbursedCents: c.disbursedCents,
     remainingCents: Math.max(0, c.goalCents - c.raisedCents),
     status: c.status,
+    impactOfFifty: prepaymentImpact(c, SAMPLE_GIFT_CENTS),
   };
 }
 

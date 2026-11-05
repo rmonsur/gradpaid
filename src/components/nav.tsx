@@ -5,7 +5,9 @@ import { Badge } from '@/components/ui';
 const LINKS = [
   { href: '/give', label: 'Give' },
   { href: '/borrow', label: 'Borrowers' },
+  { href: '/live', label: 'Live' },
   { href: '/ledger', label: 'Ledger' },
+  { href: '/proof', label: 'Proof' },
   { href: '/demo', label: 'Agent console' },
 ] as const;
 
