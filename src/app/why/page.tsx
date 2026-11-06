@@ -3,17 +3,14 @@ import { MARKET_FACTS } from '@/features/market/facts';
 
 const CHANNELS = [
   {
-    index: '01/',
     name: 'Employers',
     body: 'Up to $5,250 a year per employee is tax-free and the rule is now permanent, yet only about one employer in ten offers it. GradPaid is that benefit with no payroll integration: the employer is a sponsor that pays a PayPal invoice, the agent pays the servicer.',
   },
   {
-    index: '02/',
     name: 'Families and friends',
     body: 'Graduation and birthday money that today arrives as cash or a Venmo note can go straight to principal, with a receipt that shows the servicer received it.',
   },
   {
-    index: '03/',
     name: 'Crowds',
     body: 'People already crowdfund student debt on general-purpose platforms, and those fundraisers grew 40% in a year. None of them pay the servicer directly or prove where the money went.',
   },
@@ -29,8 +26,7 @@ export default function WhyPage(): React.ReactElement {
 
       <section className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border md:grid-cols-3">
         {CHANNELS.map((c) => (
-          <div key={c.index} className="bg-surface p-6">
-            <div className="label mb-4">{c.index}</div>
+          <div key={c.name} className="bg-surface p-6">
             <h2 className="display mb-3 text-xl normal-case">{c.name}</h2>
             <p className="text-sm text-muted">{c.body}</p>
           </div>

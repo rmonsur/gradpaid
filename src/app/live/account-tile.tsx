@@ -42,7 +42,7 @@ export function AccountTile({
           : emphasis
             ? 'border-accent/40 bg-surface'
             : 'border-border bg-surface'
-      } ${muted ? 'opacity-70' : ''}`}
+      } ${muted ? 'border-dashed' : ''}`}
     >
       <div className="label">{account}</div>
       <div className="text-sm text-foreground">{name}</div>

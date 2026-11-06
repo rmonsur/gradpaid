@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { AgGridReact } from 'ag-grid-react';
 import {
   AllCommunityModule,
@@ -14,7 +15,8 @@ import type { LedgerEntry } from '@/db/schema';
 import { formatUsd } from '@/lib/money';
 import { formatWhen } from '@/lib/format';
 import { apiFetch } from '@/lib/api-client';
-import { Badge, Card, Stat } from '@/components/ui';
+import { Badge, Button, Card, Stat } from '@/components/ui';
+import { summarizeFlows } from '@/features/live/flows';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -70,6 +72,19 @@ function KindCell(
   return <Badge tone={KIND_TONES[kind]}>{KIND_LABELS[kind]}</Badge>;
 }
 
+function RefCell(
+  params: ICellRendererParams<LedgerEntry, string | null>,
+): React.ReactElement | null {
+  if (!params.value || params.node.rowPinned) {
+    return params.value ? <span>{params.value}</span> : null;
+  }
+  return (
+    <Link href={`/proof?ref=${params.value}`} className="text-accent hover:underline">
+      {params.value}
+    </Link>
+  );
+}
+
 function formatDate(params: ValueFormatterParams<LedgerEntry, string | Date>): string {
   if (!params.value) {
     return '';
@@ -83,7 +98,13 @@ function formatCents(params: ValueFormatterParams<LedgerEntry, number>): string 
 
 const COLUMNS: readonly ColDef<LedgerEntry>[] = [
   { field: 'createdAt', headerName: 'When', valueFormatter: formatDate, sort: 'desc', width: 150 },
-  { field: 'kind', headerName: 'Kind', cellRenderer: KindCell, width: 170 },
+  {
+    field: 'kind',
+    headerName: 'Kind',
+    cellRenderer: KindCell,
+    cellClass: 'flex items-center',
+    width: 210,
+  },
   { field: 'campaignId', headerName: 'Campaign', cellClass: 'font-mono', width: 190 },
   { field: 'counterparty', headerName: 'Counterparty', width: 180 },
   {
@@ -93,30 +114,29 @@ const COLUMNS: readonly ColDef<LedgerEntry>[] = [
     type: 'rightAligned',
     width: 120,
   },
-  { field: 'paypalRef', headerName: 'PayPal ref', cellClass: 'font-mono', width: 220 },
+  {
+    field: 'paypalRef',
+    headerName: 'PayPal ref (opens proof)',
+    cellClass: 'font-mono',
+    cellRenderer: RefCell,
+    width: 240,
+  },
   { field: 'agentRunId', headerName: 'Agent run', cellClass: 'font-mono', width: 190 },
   { field: 'memo', headerName: 'Memo', flex: 1, minWidth: 240 },
 ];
 
+const COLUMN_DEFS = [...COLUMNS];
+
 const DEFAULT_COL: ColDef<LedgerEntry> = { sortable: true, filter: true, resizable: true };
 
-interface Totals {
-  readonly donations: number;
-  readonly payouts: number;
-  readonly invoiced: number;
-  readonly exceptions: number;
-}
+const CSV_FILE = 'gradpaid-ledger.csv';
 
-function computeTotals(rows: readonly LedgerEntry[]): Totals {
-  return rows.reduce<Totals>(
-    (t, r) => ({
-      donations: t.donations + (r.kind === 'donation_captured' ? r.amountCents : 0),
-      payouts: t.payouts + (r.kind === 'servicer_payout' ? r.amountCents : 0),
-      invoiced: t.invoiced + (r.kind === 'sponsor_invoiced' ? r.amountCents : 0),
-      exceptions: t.exceptions + (r.kind === 'exception' ? 1 : 0),
-    }),
-    { donations: 0, payouts: 0, invoiced: 0, exceptions: 0 },
-  );
+/** Bottom row that sums the visible money columns, recomputed whenever the filter changes. */
+function totalsRow(rows: readonly LedgerEntry[]): Partial<LedgerEntry> {
+  return {
+    memo: `Total of ${rows.length} entries`,
+    amountCents: rows.reduce((sum, r) => sum + r.amountCents, 0),
+  };
 }
 
 type LoadState =
@@ -149,17 +169,25 @@ export function LedgerGrid(): React.ReactElement {
     () => (state.status === 'ready' ? state.rows : []),
     [state],
   );
-  const totals = useMemo(() => computeTotals(rows), [rows]);
+  const flows = useMemo(() => summarizeFlows(rows), [rows]);
+  const rowData = useMemo(() => [...rows], [rows]);
+  const grid = useRef<AgGridReact<LedgerEntry>>(null);
+  const [visible, setVisible] = useState<readonly LedgerEntry[]>([]);
+  const pinned = useMemo(() => [totalsRow(visible)], [visible]);
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="grid grid-cols-2 gap-6 md:grid-cols-4">
-        <Stat label="Donations captured" value={formatUsd(totals.donations)} />
-        <Stat label="Paid to servicers" value={formatUsd(totals.payouts)} />
-        <Stat label="Sponsor invoiced" value={formatUsd(totals.invoiced)} />
+        <Stat label="Donations captured" value={formatUsd(flows.donorsPaidCents)} />
+        <Stat label="Paid to servicers" value={formatUsd(flows.servicersReceivedCents)} />
+        <Stat
+          label="Sponsor match paid"
+          value={formatUsd(flows.sponsorPaidCents)}
+          hint={`${formatUsd(flows.sponsorInvoicedCents)} invoiced`}
+        />
         <Stat
           label="Exceptions"
-          value={String(totals.exceptions)}
+          value={String(flows.exceptions)}
           hint="Mismatches flagged by the agent"
         />
       </Card>
@@ -173,7 +201,16 @@ export function LedgerGrid(): React.ReactElement {
           aria-label="Search ledger"
           className="w-full max-w-sm rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 font-mono text-sm outline-none placeholder:text-muted focus:border-accent"
         />
-        <span className="label">{rows.length} entries</span>
+        <div className="flex items-center gap-4">
+          <span className="label">{rows.length} entries</span>
+          <Button
+            variant="secondary"
+            onClick={() => grid.current?.api.exportDataAsCsv({ fileName: CSV_FILE })}
+            disabled={rows.length === 0}
+          >
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {state.status === 'error' ? (
@@ -191,9 +228,24 @@ export function LedgerGrid(): React.ReactElement {
         className="overflow-hidden rounded-[var(--radius-card)] border border-border"
       >
         <AgGridReact<LedgerEntry>
+          ref={grid}
           theme={GRID_THEME}
-          rowData={[...rows]}
-          columnDefs={[...COLUMNS]}
+          pinnedBottomRowData={pinned}
+          onModelUpdated={(e) => {
+            const shown: LedgerEntry[] = [];
+            e.api.forEachNodeAfterFilter((n) => {
+              if (n.data) {
+                shown.push(n.data);
+              }
+            });
+            setVisible((prev) =>
+              prev.length === shown.length && prev.every((r, i) => r === shown.at(i))
+                ? prev
+                : shown,
+            );
+          }}
+          rowData={rowData}
+          columnDefs={COLUMN_DEFS}
           defaultColDef={DEFAULT_COL}
           quickFilterText={quickFilter}
           loading={state.status === 'loading'}

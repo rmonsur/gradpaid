@@ -6,13 +6,14 @@ import { createPayPalToolkit } from '@/lib/paypal/toolkit';
 import { recordInvoicePayment } from '@/lib/paypal/invoice-payments';
 import { parseToolResult } from '@/lib/paypal/results';
 import { parsePayPalAmount } from '@/lib/money';
-import { startRun, finishRun } from '@/features/runs/service';
+import { startRun, finishRun, RunInProgressError } from '@/features/runs/service';
 import { listOpenInvoices, getSponsor } from '@/features/sponsors/service';
 import { MAX_AGENT_STEPS } from '@/lib/constants';
 import { logger } from '@/lib/logger';
 import type { ToolCallRecord } from '@/db/schema';
 
 const FAILED_SUMMARY = 'Sponsor agent run failed. The error is in the server logs.';
+const SKIPPED_SUMMARY = 'Skipped: this sponsor agent is already reviewing its invoices.';
 
 function systemPrompt(sponsorName: string): string {
   return `You are the payments agent for ${sponsorName}, an employer that matches gifts to student loans of people in its cohort. GradPaid's disbursement agent has sent you PayPal invoices for your match. You act for the sponsor, not for GradPaid: pay only what is owed.
@@ -71,7 +72,15 @@ async function runOne(
   trigger: string,
 ): Promise<SponsorRunResult> {
   const sponsor = await getSponsor(sponsorId);
-  const run = await startRun(`sponsor:${sponsorId}`, trigger);
+  let run;
+  try {
+    run = await startRun(`sponsor:${sponsorId}`, trigger);
+  } catch (err) {
+    if (err instanceof RunInProgressError) {
+      return { runId: '', sponsorId, summary: SKIPPED_SUMMARY, toolCalls: [] };
+    }
+    throw err;
+  }
   const recorder = createActivityRecorder();
   const paypal = createPayPalToolkit({ invoices: { get: true } }, run.id);
   const tools = withActivity(

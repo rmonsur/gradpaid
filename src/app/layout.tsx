@@ -11,10 +11,20 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '600'],
 });
 
+const DESCRIPTION =
+  'Crowd-repayment for student debt. AI agents on the PayPal Agent Toolkit route every dollar straight to the loan servicer, and every movement is on a public ledger.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: `${APP_NAME}: ${APP_TAGLINE}`,
-  description:
-    'Crowd-repayment for student debt. An AI agent on the PayPal platform routes every dollar straight to the loan servicer.',
+  description: DESCRIPTION,
+  openGraph: {
+    title: `${APP_NAME}: ${APP_TAGLINE}`,
+    description: DESCRIPTION,
+    siteName: APP_NAME,
+    type: 'website',
+  },
+  twitter: { card: 'summary_large_image', title: APP_NAME, description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>): React.ReactElement {

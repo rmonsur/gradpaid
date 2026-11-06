@@ -70,18 +70,37 @@ Environment variables:
 
 ## Judge path
 
-1. Open the hosted URL. The landing page lists three verified campaigns.
-2. Go to Give. Tell the agent who you want to help and how much. Confirm the split. Pay with the sandbox buyer account below. Watch the right-hand panel: every PayPal call shows its request, response, and id.
-3. Go to Agent console. Paste the demo token, run the disbursement agent. It pays the servicer by PayPal payout, invoices the sponsor, reconciles against PayPal transactions, and reports.
-4. Go to Ledger. Every row carries a PayPal reference.
-5. Use Reset demo data in the Agent console at any time to start over.
+The fastest route is one click: open **/live**, paste the demo token, press **Run it live**. In about a
+minute you watch a $100 gift move across PayPal accounts: GradPaid's disbursement agent pays two loan
+servicers by PayPal Payouts and invoices the employer sponsor, then the sponsor's own agent checks the
+evidence and pays that invoice. The borrower tile stays at $0.00.
+
+1. **/live**: every tile is a PayPal account, fed by the ledger and by PayPal's own Balances API.
+2. **/give**: tell the giving agent who to help; it quotes the interest each gift saves and the days it
+   takes off the loan, creates one PayPal order, and the PayPal button captures it.
+3. **/proof**: paste any PayPal order, capture or payout batch id and follow it to the servicer, with each
+   payout's status read live from PayPal.
+4. **/ledger**: the append-only ledger in AG Grid, with a pinned totals row, CSV export and a proof link
+   on every PayPal reference.
+5. **/why**: the market case, every figure cited.
+6. **/demo**: health checks, reset, and the disbursement agent with every PayPal call shown.
 
 Sandbox buyer credentials and the demo token are on the Devpost submission page.
+
+## Agent-to-agent commerce
+
+Two agents settle a payment between themselves over PayPal. GradPaid's disbursement agent issues the
+employer's match as a PayPal invoice. A separate agent acting only for that employer reads the evidence
+(its cohort's pledges, its match rule and cap, and the invoice total as PayPal holds it) and then pays
+or declines. Server guards stop it from touching another sponsor's invoice or paying any amount other
+than the one PayPal and GradPaid agree on. PayPal webhooks (`INVOICING.INVOICE.PAID`,
+`PAYMENT.PAYOUTSBATCH.SUCCESS` and `.DENIED`, `PAYMENT.CAPTURE.COMPLETED`) are signature-verified and
+applied idempotently, so settlement lands once whichever side reports it first.
 
 ## Commands
 
 ```bash
-pnpm test            # 77 unit and integration tests (integration tests need DATABASE_URL)
+pnpm test            # 99 unit and integration tests (integration tests need DATABASE_URL)
 pnpm typecheck
 pnpm lint
 pnpm disburse:dry    # run the disbursement agent from the CLI without sending payouts

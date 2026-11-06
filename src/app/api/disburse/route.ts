@@ -3,6 +3,7 @@ import { ok, fail, handle, checkInternalAuth } from '@/lib/http';
 import { runDisbursementAgent } from '@/lib/agents/disbursement-agent';
 import { RunInProgressError } from '@/features/runs/service';
 import { runSponsorAgents } from '@/lib/agents/sponsor-agent';
+import { logger } from '@/lib/logger';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { RATE_LIMITS } from '@/lib/rate-limits';
 
@@ -28,7 +29,12 @@ export async function POST(req: Request): Promise<Response> {
     const body = bodySchema.parse(text.length > 0 ? JSON.parse(text) : {});
     try {
       const disbursement = await runDisbursementAgent(body.trigger, body.dryRun);
-      const sponsorRuns = body.dryRun ? [] : await runSponsorAgents(body.trigger);
+      const sponsorRuns = body.dryRun
+        ? []
+        : await runSponsorAgents(body.trigger).catch((err: unknown) => {
+            logger.error({ err }, 'sponsor settlement failed after a successful disbursement');
+            return [];
+          });
       return ok({ ...disbursement, sponsorRuns });
     } catch (err) {
       if (err instanceof RunInProgressError) {
