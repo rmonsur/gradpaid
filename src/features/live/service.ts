@@ -11,7 +11,11 @@ export interface LiveSnapshot {
     LedgerEntry,
     'id' | 'kind' | 'amountCents' | 'counterparty' | 'paypalRef' | 'memo' | 'createdAt'
   >[];
-  readonly agent: { readonly status: string; readonly startedAt: Date } | null;
+  readonly agent: {
+    readonly name: string;
+    readonly status: string;
+    readonly startedAt: Date;
+  } | null;
 }
 
 export async function getLiveSnapshot(): Promise<LiveSnapshot> {
@@ -28,6 +32,8 @@ export async function getLiveSnapshot(): Promise<LiveSnapshot> {
       memo: e.memo,
       createdAt: e.createdAt,
     })),
-    agent: lastRun ? { status: lastRun.status, startedAt: lastRun.startedAt } : null,
+    agent: lastRun
+      ? { name: lastRun.agent, status: lastRun.status, startedAt: lastRun.startedAt }
+      : null,
   };
 }

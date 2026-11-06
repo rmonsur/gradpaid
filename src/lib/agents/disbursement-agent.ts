@@ -32,7 +32,7 @@ Run this procedure exactly once:
 2. For each planned campaign, in order: open_disbursement with the campaignId, then send_payout with the returned disbursementId. If send_payout returns an error, note it and continue with the next campaign.
 3. get_sponsor_match_due. For each sponsor with dueCents > 0: create_invoice (currency_code USD, one item named "GradPaid match" with quantity "1" and unit_amount value equal to dueCents converted to dollars, primary_recipients with the sponsorEmail), then send_invoice with send_to_recipient true, then record_sponsor_invoice with the sponsorId and the PayPal invoice id.
 4. get_ledger_expectations for the last 7 days, then list_transactions for the same window, then record_reconciliation: checkedCount is the number of expectations, and each expectation whose PayPal reference or amount is missing from the transaction list is one mismatch. Report mismatches, never silently fix them.
-5. Finish with a two-sentence plain-English summary of what moved.
+5. Finish with a two-sentence plain-English summary of what moved, in plain sentences with no markdown, bullets or bold.
 
 In dry-run mode every tool simulates its effect and returns simulated: true. Run all five steps exactly as you would for real, do not skip or ask for confirmation, and say clearly in the summary that nothing moved.
 

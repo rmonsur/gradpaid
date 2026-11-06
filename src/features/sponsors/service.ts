@@ -1,4 +1,5 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
+import { appendLedger } from '@/features/ledger/service';
 import { getDb } from '@/db/client';
 import { sponsors, invoices, pledges, campaigns, type Sponsor, type Invoice } from '@/db/schema';
 import { newId } from '@/lib/ids';
@@ -88,4 +89,52 @@ export async function listSponsorMatchDue(): Promise<readonly SponsorMatchDue[]>
       dueCents: Math.max(0, Math.min(gross, s.capCents) - s.matchedCents),
     };
   });
+}
+
+/**
+ * Settles a sponsor match invoice exactly once: a conditional sent-to-paid update, so the PayPal
+ * webhook and the sponsor agent can both call it and only one writes the sponsor_paid row.
+ */
+export async function markInvoicePaid(paypalInvoiceId: string): Promise<boolean> {
+  const rows = await getDb()
+    .update(invoices)
+    .set({ status: 'paid' })
+    .where(and(eq(invoices.paypalInvoiceId, paypalInvoiceId), eq(invoices.status, 'sent')))
+    .returning();
+  const invoice = rows[0];
+  if (!invoice) {
+    return false;
+  }
+  const sponsor = await getSponsor(invoice.sponsorId);
+  await appendLedger({
+    kind: 'sponsor_paid',
+    amountCents: invoice.amountCents,
+    counterparty: sponsor?.name ?? invoice.sponsorId,
+    paypalRef: paypalInvoiceId,
+    memo: 'Sponsor match paid on its PayPal invoice',
+  });
+  return true;
+}
+
+export async function getInvoiceByPayPalId(paypalInvoiceId: string): Promise<Invoice | undefined> {
+  const rows = await getDb()
+    .select()
+    .from(invoices)
+    .where(eq(invoices.paypalInvoiceId, paypalInvoiceId))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listOpenInvoices(): Promise<readonly Invoice[]> {
+  return getDb().select().from(invoices).where(eq(invoices.status, 'sent'));
+}
+
+/** Cents pledged to campaigns tagged with a cohort, the base a sponsor's match is computed on. */
+export async function cohortPledgedCents(cohortTag: string): Promise<number> {
+  const rows = await getDb()
+    .select({ total: sql<number>`coalesce(sum(${pledges.cents}), 0)::int` })
+    .from(pledges)
+    .innerJoin(campaigns, eq(campaigns.id, pledges.campaignId))
+    .where(sql`${cohortTag} = any(${campaigns.cohortTags})`);
+  return rows[0]?.total ?? 0;
 }

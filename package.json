@@ -16,7 +16,8 @@
     "seed": "tsx scripts/seed.ts",
     "disburse": "tsx scripts/disburse.ts",
     "disburse:dry": "tsx scripts/disburse.ts --dry-run",
-    "disburse:cron": "sh scripts/disburse-cron.sh"
+    "disburse:cron": "sh scripts/disburse-cron.sh",
+    "webhook:register": "tsx scripts/register-webhook.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "1.2.12",

@@ -45,10 +45,11 @@ export function MoneyBoard({ data }: { readonly data: LivePayload }): React.Reac
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         <AccountTile
-          account="Sponsor · PayPal account"
-          name="Match invoiced"
-          cents={f.sponsorInvoicedCents}
-          caption="create_invoice and send_invoice, verified with get_invoice"
+          account="Employer sponsor · its own agent"
+          name="Match paid on PayPal invoice"
+          cents={f.sponsorPaidCents}
+          caption={`${formatUsd(f.sponsorInvoicedCents)} invoiced by GradPaid's agent, checked and paid by the sponsor's agent`}
+          emphasis={f.sponsorPaidCents > 0}
         />
         <AccountTile
           account="Borrower · no PayPal account needed"

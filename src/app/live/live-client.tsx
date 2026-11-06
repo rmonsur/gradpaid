@@ -40,7 +40,11 @@ export function LiveClient(): React.ReactElement {
       <StoryControl onTick={() => void load()} />
       <div className="flex items-center gap-3">
         <Badge tone={running ? 'accent' : 'neutral'} live={running}>
-          {running ? 'Disbursement agent running' : 'Agent idle'}
+          {running
+            ? data?.agent?.name.startsWith('sponsor')
+              ? 'Sponsor agent reviewing its invoice'
+              : 'Disbursement agent running'
+            : 'Agents idle'}
         </Badge>
         {failed ? (
           <span className="text-xs text-danger">Live data unavailable, retrying</span>

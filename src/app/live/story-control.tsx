@@ -10,7 +10,7 @@ const STEP_TEXT: Record<Step, string> = {
   idle: 'Resets the sandbox demo with one captured $100 gift, then runs the disbursement agent for real against PayPal sandbox. Watch the board.',
   resetting: 'Seeding three verified campaigns and one captured $100 gift.',
   disbursing:
-    'Agent running: planning, paying servicers by PayPal Payouts, invoicing the sponsor, reconciling.',
+    'Agents running: paying servicers by PayPal Payouts and invoicing the employer sponsor, then the sponsor’s own agent checks the evidence and pays the invoice.',
   done: 'Done. Every movement above carries a PayPal reference you can trace.',
   error: '',
 };

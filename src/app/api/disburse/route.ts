@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ok, fail, handle, checkInternalAuth } from '@/lib/http';
 import { runDisbursementAgent } from '@/lib/agents/disbursement-agent';
 import { RunInProgressError } from '@/features/runs/service';
+import { runSponsorAgents } from '@/lib/agents/sponsor-agent';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { RATE_LIMITS } from '@/lib/rate-limits';
 
@@ -26,7 +27,9 @@ export async function POST(req: Request): Promise<Response> {
     const text = await req.text();
     const body = bodySchema.parse(text.length > 0 ? JSON.parse(text) : {});
     try {
-      return ok(await runDisbursementAgent(body.trigger, body.dryRun));
+      const disbursement = await runDisbursementAgent(body.trigger, body.dryRun);
+      const sponsorRuns = body.dryRun ? [] : await runSponsorAgents(body.trigger);
+      return ok({ ...disbursement, sponsorRuns });
     } catch (err) {
       if (err instanceof RunInProgressError) {
         return fail(

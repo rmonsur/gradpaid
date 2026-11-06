@@ -109,8 +109,8 @@ function Hero({ campaigns }: { campaigns: readonly CampaignSummary[] }): React.R
           </p>
           <div className="flex flex-wrap gap-3">
             <LinkButton href="/give">Give toward a loan</LinkButton>
-            <LinkButton href="/borrow" variant="secondary">
-              I am a borrower
+            <LinkButton href="/live" variant="secondary">
+              Watch money move
             </LinkButton>
           </div>
         </div>
@@ -142,6 +142,29 @@ export default async function Home(): Promise<React.ReactElement> {
   return (
     <div className="space-y-20">
       <Hero campaigns={campaigns ?? []} />
+
+      <section className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border md:grid-cols-3">
+        <div className="bg-surface p-6">
+          <Stat label="US student loan balances" value="$1.65T" hint="New York Fed, Q2 2026" />
+        </div>
+        <div className="bg-surface p-6">
+          <Stat
+            label="Tax-free employer repayment"
+            value="$5,250 / yr"
+            hint="Now permanent; about 1 in 10 employers offer it"
+          />
+        </div>
+        <div className="bg-surface p-6">
+          <Stat
+            label="Student-debt fundraisers"
+            value="+40% YoY"
+            hint="Demand already exists. It just never reaches the servicer."
+          />
+          <Link href="/why" className="mt-3 inline-block text-sm text-accent hover:underline">
+            Why it pays
+          </Link>
+        </div>
+      </section>
 
       <section className="space-y-6">
         <h2 className="display text-3xl">How it works.</h2>

@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { resetDemo } from '@/features/demo/seed';
 import { startRun } from '@/features/runs/service';
-import {
-  openDisbursementForCampaign,
-  recordPayoutSent,
-} from '@/features/disbursement/service';
+import { openDisbursementForCampaign, recordPayoutSent } from '@/features/disbursement/service';
 import { traceByPayPalRef } from '@/features/proof/service';
 
 const CAPTURE = 'SEED-DEMO-CAPTURE';
