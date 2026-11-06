@@ -1,6 +1,6 @@
 /**
- * A formula trigger (= + - @ | %) after any run of whitespace, control or invisible characters.
- * Spreadsheets skip those leading characters, so they must not hide the trigger.
+ * A leading tab or carriage return, or a formula trigger (= + - @ | %) after any run of
+ * whitespace, control or invisible characters, which spreadsheets skip before evaluating.
  */
 const FORMULA_PREFIX = /^[\s\u0000-\u001f​-‍⁠﻿]*[=+\-@|%]/;
 
