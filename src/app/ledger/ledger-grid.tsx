@@ -17,6 +17,7 @@ import { formatWhen } from '@/lib/format';
 import { apiFetch } from '@/lib/api-client';
 import { Badge, Button, Card, Stat } from '@/components/ui';
 import { summarizeFlows } from '@/features/live/flows';
+import { csvSafe } from '@/lib/csv-safe';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -205,7 +206,12 @@ export function LedgerGrid(): React.ReactElement {
           <span className="label">{rows.length} entries</span>
           <Button
             variant="secondary"
-            onClick={() => grid.current?.api.exportDataAsCsv({ fileName: CSV_FILE })}
+            onClick={() =>
+              grid.current?.api.exportDataAsCsv({
+                fileName: CSV_FILE,
+                processCellCallback: ({ value }) => csvSafe(value),
+              })
+            }
             disabled={rows.length === 0}
           >
             Export CSV
