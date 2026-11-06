@@ -1,8 +1,8 @@
-/**
- * A leading tab or carriage return, or a formula trigger (= + - @ | %) after any run of
- * whitespace, control or invisible characters, which spreadsheets skip before evaluating.
- */
-const FORMULA_PREFIX = /^[\s\u0000-\u001f​-‍⁠﻿]*[=+\-@|%]/;
+/** Characters spreadsheets skip before evaluating: whitespace, controls, zero-width marks, BOM. */
+const IGNORED_LEADERS = '[\\s\\u0000-\\u001f\\u200b-\\u200d\\u2060\\ufeff]*';
+
+/** A leading tab or CR, or a formula trigger (= + - @ | %) hidden behind ignored leaders. */
+const FORMULA_PREFIX = new RegExp(`^(?:[\\t\\r]|${IGNORED_LEADERS}[=+\\-@|%])`);
 
 /** Prefixes a quote so spreadsheets show a value as text instead of running it as a formula. */
 export function csvSafe<T>(value: T): T | string {
